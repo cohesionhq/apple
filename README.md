@@ -44,5 +44,5 @@ contributor's guide too.
 
 Copyright © 2026 Jackson Zamorano.
 
-Licensed under the GNU Affero General Public License, version 3 only
-(AGPL-3.0-only); see [LICENSE](LICENSE).
+Licensed under the Apache License, version 2.0 (Apache-2.0); see
+[LICENSE](LICENSE).
