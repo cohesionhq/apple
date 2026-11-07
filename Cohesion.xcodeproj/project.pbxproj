@@ -549,6 +549,7 @@
 				CODE_SIGN_ENTITLEMENTS = Cohesion/Cohesion.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -594,6 +595,7 @@
 				CODE_SIGN_ENTITLEMENTS = Cohesion/Cohesion.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -637,6 +639,7 @@
 				CODE_SIGN_ENTITLEMENTS = CohesionNotificationService/CohesionNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CohesionNotificationService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CohesionNotificationService;
@@ -665,6 +668,7 @@
 				CODE_SIGN_ENTITLEMENTS = CohesionNotificationService/CohesionNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CohesionNotificationService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CohesionNotificationService;
@@ -694,6 +698,7 @@
 				CODE_SIGN_ENTITLEMENTS = CohesionWidgets/CohesionWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CohesionWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cohesion;
@@ -724,6 +729,7 @@
 				CODE_SIGN_ENTITLEMENTS = CohesionWidgets/CohesionWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CohesionWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cohesion;
@@ -754,6 +760,7 @@
 				CODE_SIGN_ENTITLEMENTS = CohesionShare/CohesionShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CohesionShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cohesion;
@@ -785,6 +792,7 @@
 				CODE_SIGN_ENTITLEMENTS = CohesionShare/CohesionShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = HJ77KSHQ2N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CohesionShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cohesion;

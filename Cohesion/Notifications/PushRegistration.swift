@@ -21,7 +21,7 @@ import UserNotifications
 /// before iOS had one, would otherwise wait until something changed.
 @Observable @MainActor
 final class PushRegistration: PairingObserver {
-    static let companionIdentifier = "com.cohesion.cloud.ios-companion"
+    static let companionIdentifier = "com.hellocohesion.ios-companion"
     /// How long a registration is trusted, however recently it was tried.
     private static let maxAge: TimeInterval = 24 * 60 * 60
     /// How soon a return to the foreground registers again when nothing
