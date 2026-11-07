@@ -1,0 +1,6 @@
+.DS_Store
+xcuserdata/
+CLAUDE.local.md
+.build/
+.swiftpm/
+Packages/*/Package.resolved
