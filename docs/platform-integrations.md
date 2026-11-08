@@ -75,13 +75,16 @@ iOS Companion extension sends them; see its documentation for the
 permissions and hooks the
 user enables and the payloads.
 
-- `Cohesion/Notifications/PushRegistration.swift` asks cohesiond for a short-lived
-  grant (`callExtension` to `com.cohesion.cloud.ios-companion`'s
-  `deviceGrant`), then posts the APNs token and the Live Activity
-  push-to-start token to the cloud's registration URL. It registers again
-  at launch, on return to the foreground and after pairing. Turning it
-  off in Settings or unpairing removes the registration; revoking a client
-  removes it on the daemon's side.
+- `Cohesion/Notifications/PushRegistration.swift` gives the APNs token and the
+  Live Activity push-to-start token to cohesiond's iOS Companion extension
+  (`callExtension` to `com.hellocohesion.ios-companion`'s `registerDevice`),
+  which sends pushes through the relay itself. A Live Activity's own token
+  goes to it as `registerLiveActivityToken`, and `liveActivityDismissed`
+  tells it one ended. It registers again at launch, on return to the
+  foreground and after pairing. Turning it off in Settings or unpairing
+  calls `unregisterDevice`; revoking a client removes it on the daemon's
+  side. A companion before version 9 (its `status` says) is refused with a
+  message to update it.
 - `Cohesion/Notifications/AppDelegate.swift` handles the token callbacks and a
   tap: a push with `agentId` sets `model.pendingLink = .agent(id)`, which
   the first active window takes (`takePendingLink()`). Its banner is

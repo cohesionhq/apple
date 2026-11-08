@@ -160,9 +160,21 @@ public struct CompanionStatus: Decodable {
     /// permission), so pushes carry each agent's name, emoji and color.
     /// Older companions don't send it; assume they can.
     public let agentLookup: Bool
+    /// The companion's version; `nil` from one that doesn't say, which is
+    /// older than any that registers devices itself.
+    public let version: Int?
+
+    /// The first companion version that takes the phone's push tokens
+    /// itself (`registerDevice` and the calls after it).
+    public static let firstDeviceRegistrationVersion = 9
+
+    /// Whether the companion registers devices itself.
+    public var supportsDeviceRegistration: Bool {
+        (version ?? 0) >= Self.firstDeviceRegistrationVersion
+    }
 
     private enum CodingKeys: String, CodingKey {
-        case signedIn, account, cloud, agentLookup
+        case signedIn, account, cloud, agentLookup, version
     }
 
     public init(from decoder: any Decoder) throws {
@@ -171,41 +183,6 @@ public struct CompanionStatus: Decodable {
         account = try container.decodeIfPresent(String.self, forKey: .account)
         cloud = try container.decode(String.self, forKey: .cloud)
         agentLookup = try container.decodeIfPresent(Bool.self, forKey: .agentLookup) ?? true
-    }
-}
-
-/// A short-lived, single-use permission to register one device at the cloud.
-public struct DeviceGrant: Decodable {
-    public let grant: String
-    /// RFC 3339.
-    public let expiresAt: String
-    /// Where to `POST` (register) or `DELETE` (unregister) this device.
-    public let registrationURL: String
-    /// The cloud account the device is registered under.
-    public let account: String
-}
-
-/// The cloud's record of a registered device.
-public struct DeviceRegistration: Decodable {
-    /// The cloud's identifier, as text whether it sends a number or a string.
-    public let id: String
-    public let name: String
-    public let topic: String
-    public let environment: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, name, topic, environment
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        if let number = try? container.decode(Int.self, forKey: .id) {
-            id = String(number)
-        } else {
-            id = try container.decode(String.self, forKey: .id)
-        }
-        name = try container.decode(String.self, forKey: .name)
-        topic = try container.decode(String.self, forKey: .topic)
-        environment = try container.decode(String.self, forKey: .environment)
+        version = try? container.decodeIfPresent(Int.self, forKey: .version)
     }
 }

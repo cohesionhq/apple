@@ -332,10 +332,17 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
 
 iOS only; the Mac has none of this.
 
-- `Cohesion/Notifications/PushRegistration.swift`: gets a short-lived grant from
-  cohesiond's iOS Companion extension, then registers the APNs token and
-  the Live Activity push-to-start token with Cohesion Cloud. It
-  re-registers at every launch and return to the foreground.
+- `Cohesion/Notifications/PushRegistration.swift`: gives the APNs token and
+  the Live Activity push-to-start token to cohesiond's iOS Companion
+  extension (`callExtension` `registerDevice`), which keeps them and sends
+  through the relay; the phone never talks to the relay. Live Activity
+  tokens go the same way (`registerLiveActivityToken`, `liveActivityDismissed`),
+  and turning off or unpairing calls `unregisterDevice`. The app holds one
+  pairing, so one daemon is called; each call goes through `callCompanion(client, ...)`,
+  so a phone paired with several would call each, which ignores a code it
+  didn't start. A companion before version 9 (its `status` says) is
+  refused with a message to update it. It re-registers at every launch and
+  return to the foreground.
   `AppDelegate.swift` handles notification taps and replies typed into a
   notification.
 - `Cohesion/LiveActivities/CohesionActivitiesAttributes.swift`: the Live

@@ -9,11 +9,16 @@ import UserNotifications
 
 /// This device's registration for agent notifications and Live Activities.
 ///
-/// The phone has no cloud identity, so it asks cohesiond's iOS Companion
-/// extension for a short-lived grant, then registers its APNs token, and its
-/// push-to-start token for Live Activities, with Cohesion Cloud directly
-/// using that grant. A Live Activity the cloud starts carries a code that
-/// registers that activity's own token.
+/// The phone has no cloud identity and never talks to the push relay. It
+/// gives its APNs token, and its push-to-start token for Live Activities, to
+/// cohesiond's iOS Companion extension (`registerDevice`), which keeps them
+/// and sends pushes through the relay itself. A Live Activity the companion
+/// starts carries a code that the phone answers with that activity's own
+/// token (`registerLiveActivityToken`), and tells it when one ends
+/// (`liveActivityDismissed`).
+///
+/// A companion before version 9 knows none of that, and the app says so
+/// rather than registering another way.
 ///
 /// Registering is idempotent, so the app registers again at every launch and
 /// return to the foreground rather than trusting what it last sent: the cloud
@@ -136,8 +141,7 @@ final class PushRegistration: PairingObserver {
         }
     }
 
-    /// Registers `token` at the cloud with a grant from the companion.
-    /// Returns whether the cloud has it.
+    /// Gives `token` to the companion. Returns whether it has it.
     @discardableResult
     func register(token: Data, using client: CohesionClient) async -> Bool {
         if let registration {
@@ -157,24 +161,23 @@ final class PushRegistration: PairingObserver {
         let startToken = liveActivityStartToken
         Self.log.info("Registering (\(environment, privacy: .public), start token \(startToken == nil ? "missing" : "present", privacy: .public))")
         do {
-            let (grant, agentLookup) = try await companionGrant(using: client)
-            Self.log.debug("Got a grant for \(grant.account, privacy: .private)")
+            let companion = try await companionStatus(using: client)
             let hex = Self.hex(token)
-            var body = [
-                "grant": grant.grant,
+            let topic = try Self.topic()
+            var args: [String: Any] = [
                 "token": hex,
-                "topic": try Self.topic(),
+                "topic": topic,
                 "environment": environment,
                 "name": UIDevice.current.name,
             ]
-            body["liveActivityToken"] = startToken
-            let _: DeviceRegistration? = try await send("POST", to: grant.registrationURL, body)
+            args["startToken"] = startToken
+            _ = try await callCompanion(client, "registerDevice", args)
+            let agentLookup = companion.agentLookup
             let stored = Stored(
                 token: hex,
                 liveActivityToken: startToken,
                 environment: environment,
-                registrationURL: grant.registrationURL,
-                account: grant.account,
+                account: companion.account ?? "Cohesion",
                 registeredAt: .now
             )
             stored.save()
@@ -192,9 +195,9 @@ final class PushRegistration: PairingObserver {
         return false
     }
 
-    /// Removes this device from the cloud with a fresh grant, so it stops
-    /// getting notifications, and keeps it from registering again on its
-    /// own until the user turns notifications back on.
+    /// Removes this device from the companion, so it stops getting
+    /// notifications, and keeps it from registering again on its own until
+    /// the user turns notifications back on.
     func unregister(using client: CohesionClient) async {
         Stored.optedOut = true
         guard Stored.load() != nil else {
@@ -211,8 +214,8 @@ final class PushRegistration: PairingObserver {
         }
     }
 
-    /// Forgets the registration on unpairing, removing it from the cloud
-    /// while the old server can still grant that. The local copy goes even
+    /// Forgets the registration on unpairing, removing it from the old server
+    /// while it can still be reached. The local copy goes even
     /// when the cloud can't be reached, so the next server starts clean.
     func forget(using client: CohesionClient?) async {
         Self.log.info("Forgetting the registration")
@@ -242,11 +245,7 @@ final class PushRegistration: PairingObserver {
     private func removeRegistration(using client: CohesionClient) async throws {
         guard let stored = Stored.load() else { return }
         do {
-            let (grant, _) = try await companionGrant(using: client)
-            let _: JSONValue? = try await send("DELETE", to: grant.registrationURL, [
-                "grant": grant.grant,
-                "token": stored.token,
-            ])
+            _ = try await callCompanion(client, "unregisterDevice", ["token": stored.token])
             Stored.remove()
             Self.log.info("Unregistered")
         } catch {
@@ -410,21 +409,20 @@ final class PushRegistration: PairingObserver {
         }
         Task {
             if let token = activity.pushToken {
-                await register(liveActivityToken: token, code: activity.attributes.registrationCode)
+                await register(liveActivityToken: token, code: activity.attributes.registrationCode, client: client)
             }
             for await token in activity.pushTokenUpdates {
-                await register(liveActivityToken: token, code: activity.attributes.registrationCode)
+                await register(liveActivityToken: token, code: activity.attributes.registrationCode, client: client)
             }
             watchedActivityIDs.remove(activity.id)
         }
     }
 
-    /// Registers a Live Activity's push token at the cloud this device
-    /// registered with, proving it with the code from the activity's
-    /// attributes. Retries with backoff while the cloud can't be reached or
-    /// the device isn't registered yet; gives up on a refusal, which no
-    /// retry would change.
-    private func register(liveActivityToken token: Data, code: String) async {
+    /// Gives a Live Activity's push token to the companion that started it,
+    /// named by the code from the activity's attributes. Retries with backoff
+    /// while the daemon can't be reached or the device isn't registered yet;
+    /// gives up on a refusal, which no retry would change.
+    private func register(liveActivityToken token: Data, code: String, client: () -> CohesionClient?) async {
         // The code comes from a push; it only ever goes back to the cloud.
         guard !code.isEmpty, code.count <= 128, let topic = try? Self.topic() else {
             Self.log.error("Live Activity token not registered: bad code")
@@ -436,22 +434,27 @@ final class PushRegistration: PairingObserver {
                 try? await Task.sleep(for: .seconds(delay))
                 delay = min(delay * 2, Self.maxBackoff)
             }
-            guard let stored = Stored.load(),
-                  let url = URL(string: stored.registrationURL)?.appending(path: "live-activities")
-            else {
+            guard Stored.load() != nil else {
                 Self.log.info("Live Activity token waits for the device's registration (attempt \(attempt))")
                 continue
             }
+            let args = [
+                "code": code,
+                "token": Self.hex(token),
+                "topic": topic,
+                "environment": Self.environment,
+            ]
             do {
-                let _: JSONValue? = try await send("POST", to: url.absoluteString, [
-                    "code": code,
-                    "token": Self.hex(token),
-                    "topic": topic,
-                    "environment": Self.environment,
-                ])
-                Self.log.info("Registered a Live Activity token")
+                guard let client = client() else {
+                    Self.log.info("Live Activity token waits for a paired server (attempt \(attempt))")
+                    continue
+                }
+                let reply = try await callCompanion(client, "registerLiveActivityToken", args)
+                let known = try? reply.decode(as: KnownReply.self).known
+                Self.log.info("Registered a Live Activity token (known: \(known.map(String.init) ?? "unsaid", privacy: .public))")
                 return
-            } catch let error as PushError where error.isRetryable {
+            } catch let error where !(error is PushError) && !(error is ServerError) {
+                // The connection to the daemon failed rather than the daemon refusing.
                 Self.log.error("Live Activity token failed (attempt \(attempt)): \(error.localizedDescription, privacy: .public)")
             } catch {
                 Self.log.error("Live Activity token refused: \(error.localizedDescription, privacy: .public)")
@@ -508,34 +511,24 @@ final class PushRegistration: PairingObserver {
         _ = await reportDismissal(["code": code], client: client)
     }
 
-    /// Sends `body` to the cloud's Live Activity dismissal endpoint and
-    /// returns its reply, or `nil` when it failed; a failure waits for the
-    /// next return to the foreground. A cloud that knows neither the code nor
-    /// the device has lost the registration, so the device registers again.
+    /// Sends `body` to the companion's `liveActivityDismissed` and returns
+    /// its reply, or `nil` when it failed; a failure waits for the next
+    /// return to the foreground.
     private func reportDismissal(_ body: [String: String], client: () -> CohesionClient?) async -> LiveActivityDismissal? {
-        guard let stored = Stored.load(),
-              let url = URL(string: stored.registrationURL)?.appending(path: "live-activities/dismissed")
-        else {
+        guard Stored.load() != nil else {
             Self.log.info("Live Activity dismissal not reported: not registered")
             return nil
         }
+        guard let client = client() else { return nil }
         do {
-            guard let reply: LiveActivityDismissal = try await send("POST", to: url.absoluteString, body) else {
-                Self.log.error("Live Activity dismissal reported, with an empty reply")
-                return nil
-            }
-            Self.log.info("Live Activity dismissal reported: \(reply.event.rawValue, privacy: .public), delivered \(reply.delivered), tracked \(reply.tracked)\(reply.reason.map { " (\($0))" } ?? "", privacy: .public)")
-            return reply
-        } catch PushError.grantExpired {
-            Self.log.error("The cloud doesn't know this device; registering again")
-            if let client = client(), let token = try? await deviceToken() {
-                lastAttempt = nil
-                await register(token: token, using: client)
-            }
+            let reply = try await callCompanion(client, "liveActivityDismissed", body)
+            let replaced = try reply.decode(as: ReplacedReply.self).replaced
+            Self.log.info("Live Activity dismissal reported, replaced: \(replaced, privacy: .public)")
+            return LiveActivityDismissal(replaced: replaced)
         } catch {
             Self.log.error("Live Activity dismissal not reported: \(error.localizedDescription, privacy: .public)")
+            return nil
         }
-        return nil
     }
 
     /// Ends Live Activities left behind, as when their end push never came,
@@ -622,46 +615,26 @@ final class PushRegistration: PairingObserver {
         return try await request.value
     }
 
-    /// A grant from the iOS Companion extension, checking first that it is
-    /// signed in, and whether it can look agents up for the pushes it sends.
-    private func companionGrant(using client: CohesionClient) async throws -> (DeviceGrant, agentLookup: Bool) {
+    /// The iOS Companion extension's status, checking that it is signed in.
+    private func companionStatus(using client: CohesionClient) async throws -> CompanionStatus {
+        let status = try await callCompanion(client, "status").decode(as: CompanionStatus.self)
+        guard status.signedIn else { throw PushError.notSignedIn }
+        guard status.supportsDeviceRegistration else { throw PushError.companionTooOld }
+        return status
+    }
+
+    /// Calls the iOS Companion extension on the daemon `client` is paired
+    /// with, saying in words what is wrong when it can't be reached. A phone
+    /// paired with several daemons calls each with its own client.
+    private func callCompanion(_ client: CohesionClient, _ name: String, _ args: [String: Any]? = nil) async throws -> JSONValue {
         do {
-            let status = try await client.callExtension(Self.companionIdentifier, "status").decode(as: CompanionStatus.self)
-            guard status.signedIn else { throw PushError.notSignedIn }
-            let grant = try await client.callExtension(Self.companionIdentifier, "deviceGrant").decode(as: DeviceGrant.self)
-            return (grant, status.agentLookup)
+            return try await client.callExtension(Self.companionIdentifier, name, args: args)
         } catch let error as ServerError where error.code == ServerError.notFound {
             // cohesiond has no extension with the companion's identifier.
             throw PushError.companionNotInstalled
         } catch let error as ServerError where error.message.localizedCaseInsensitiveContains("permission") {
             throw PushError.clientPermissionDisabled
         }
-    }
-
-    /// Sends `body` to the cloud, which has a real certificate, so this is
-    /// plain HTTPS rather than the paired client's mutual TLS.
-    private func send<Reply: Decodable>(_ method: String, to urlString: String, _ body: [String: String]) async throws -> Reply? {
-        guard let url = URL(string: urlString) else { throw PushError.cloudRejected("The cloud's registration address is invalid.") }
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body)
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch is URLError {
-            throw PushError.cloudUnreachable
-        }
-        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(code) else {
-            let message = (try? JSONDecoder().decode(CloudMessage.self, from: data))?.message
-                ?? String(decoding: data, as: UTF8.self)
-            Self.log.error("\(method, privacy: .public) \(url.path(), privacy: .public): \(code)")
-            if code == 404 { throw PushError.grantExpired(message) }
-            throw PushError.cloudRejected(message, retryable: code >= 500 || code == 429)
-        }
-        return data.isEmpty ? nil : try JSONDecoder().decode(Reply.self, from: data)
     }
 
     // MARK: Values
@@ -724,12 +697,18 @@ private extension CohesionActivitiesAttributes.ContentState {
     }
 }
 
-/// An error body from the cloud.
-private struct CloudMessage: Decodable {
-    let message: String
+/// A companion's reply to `registerLiveActivityToken`.
+private struct KnownReply: Decodable {
+    let known: Bool
 }
 
-/// The cloud's reply to a Live Activity dismissal.
+/// A companion's reply to `liveActivityDismissed`.
+private struct ReplacedReply: Decodable {
+    let replaced: Bool
+}
+
+/// The reply to a Live Activity dismissal: the cloud's, or a companion's
+/// `replaced` as the same thing.
 private struct LiveActivityDismissal: Decodable {
     enum Event: String, Decodable {
         /// The cloud pushed a fresh Live Activity.
@@ -745,6 +724,14 @@ private struct LiveActivityDismissal: Decodable {
     /// Why nothing started.
     let reason: String?
 
+    /// A companion's answer, which says only whether it started a new one.
+    init(replaced: Bool) {
+        event = replaced ? .start : .none
+        delivered = replaced ? 1 : 0
+        tracked = 0
+        reason = nil
+    }
+
     /// Whether nothing started only because the cloud started one moments
     /// ago, which may have been on its way.
     var isCoolingDown: Bool {
@@ -758,25 +745,13 @@ enum PushError: LocalizedError {
     case companionNotInstalled
     case clientPermissionDisabled
     case notSignedIn
-    case cloudUnreachable
-    case grantExpired(String)
-    /// `retryable` when the cloud failed rather than refused.
-    case cloudRejected(String, retryable: Bool = false)
+    case companionTooOld
     case noToken(String)
 
     /// A problem the user fixes in cohesiond rather than by trying again.
     var isSetupProblem: Bool {
         switch self {
-        case .companionNotInstalled, .clientPermissionDisabled, .notSignedIn: true
-        default: false
-        }
-    }
-
-    /// Whether trying the same request again may work.
-    var isRetryable: Bool {
-        switch self {
-        case .cloudUnreachable: true
-        case .cloudRejected(_, let retryable): retryable
+        case .companionNotInstalled, .clientPermissionDisabled, .notSignedIn, .companionTooOld: true
         default: false
         }
     }
@@ -789,12 +764,8 @@ enum PushError: LocalizedError {
             "The iOS Companion extension's \u{201C}service\u{201D} permission isn't enabled. Turn it on in Cohesion's extension settings."
         case .notSignedIn:
             "The iOS Companion extension isn't signed in to Cohesion Cloud."
-        case .cloudUnreachable:
-            "Couldn't reach Cohesion Cloud."
-        case .grantExpired(let message):
-            "The registration grant expired. Try again. (\(message))"
-        case .cloudRejected(let message, _):
-            "Cohesion Cloud refused the registration: \(message)"
+        case .companionTooOld:
+            "The iOS Companion extension is out of date. Update it in Cohesion."
         case .noToken(let reason):
             "This device couldn't get a push token. \(reason)"
         }
@@ -809,7 +780,6 @@ private struct Stored {
         static let token = "push.token"
         static let liveActivityToken = "push.liveActivityToken"
         static let environment = "push.environment"
-        static let registrationURL = "push.registrationURL"
         static let account = "push.account"
         static let registeredAt = "push.registeredAt"
         static let optedOut = "push.optedOut"
@@ -822,7 +792,6 @@ private struct Stored {
     /// The APNs gateway the token was sent for; `nil` from a build before it
     /// was kept, which registers again.
     let environment: String?
-    let registrationURL: String
     let account: String
     let registeredAt: Date
 
@@ -836,7 +805,6 @@ private struct Stored {
     static func load() -> Stored? {
         let defaults = UserDefaults.standard
         guard let token = defaults.string(forKey: Key.token),
-              let registrationURL = defaults.string(forKey: Key.registrationURL),
               let account = defaults.string(forKey: Key.account),
               let registeredAt = defaults.object(forKey: Key.registeredAt) as? Date
         else { return nil }
@@ -844,7 +812,6 @@ private struct Stored {
             token: token,
             liveActivityToken: defaults.string(forKey: Key.liveActivityToken),
             environment: defaults.string(forKey: Key.environment),
-            registrationURL: registrationURL,
             account: account,
             registeredAt: registeredAt
         )
@@ -855,14 +822,13 @@ private struct Stored {
         defaults.set(token, forKey: Key.token)
         defaults.set(liveActivityToken, forKey: Key.liveActivityToken)
         defaults.set(environment, forKey: Key.environment)
-        defaults.set(registrationURL, forKey: Key.registrationURL)
         defaults.set(account, forKey: Key.account)
         defaults.set(registeredAt, forKey: Key.registeredAt)
     }
 
     static func remove() {
         let defaults = UserDefaults.standard
-        for key in [Key.token, Key.liveActivityToken, Key.environment, Key.registrationURL, Key.account, Key.registeredAt] {
+        for key in [Key.token, Key.liveActivityToken, Key.environment, Key.account, Key.registeredAt] {
             defaults.removeObject(forKey: key)
         }
     }
