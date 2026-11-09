@@ -43,6 +43,10 @@ public struct ExtensionsView: View {
             }
         }
         .navigationTitle("Extensions")
+        #if os(iOS)
+        // Inline, as Settings above it is: a page pushed in a sheet.
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 if isReading {
@@ -120,8 +124,9 @@ public struct ExtensionsView: View {
     }
 }
 
-/// An installed extension's icon, name and version over its description. A
-/// label, so the row's separator starts where its text does.
+/// An installed extension's icon and name over its description, up to two
+/// lines, with its version at the trailing edge, clear of the name. A label,
+/// so the row's separator starts where its text does.
 private struct ExtensionRow: View {
     let extensionSummary: ExtensionSummary
 
@@ -133,8 +138,9 @@ private struct ExtensionRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(extensionSummary.name)
                         .lineLimit(1)
+                    Spacer(minLength: 8)
                     Text("v\(extensionSummary.version.formatted())")
-                        .font(.caption)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
@@ -142,7 +148,7 @@ private struct ExtensionRow: View {
                     Text(extensionSummary.description)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
             }
         } icon: {

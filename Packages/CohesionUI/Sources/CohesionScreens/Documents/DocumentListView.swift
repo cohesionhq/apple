@@ -28,6 +28,10 @@ struct DocumentListView: View {
     /// How long typing in the search field has to pause before it searches.
     private static let searchDelay = Duration.milliseconds(250)
 
+    /// When a document changed, as words near now ("Yesterday", "5 hours
+    /// ago"), capitalised as the rest of the row's words are.
+    private static let modifiedStyle = Date.RelativeFormatStyle(presentation: .named, capitalizationContext: .beginningOfSentence)
+
     var body: some View {
         List {
             ForEach(groups, id: \.title) { group in
@@ -37,8 +41,11 @@ struct DocumentListView: View {
                             DocumentView(workspaceID: workspaceID, documentID: document.id)
                                 .zoomsOnIPad(from: document.id, in: rows)
                         } label: {
-                            LabeledContent(document.title) {
-                                Text(document.modified, format: .relative(presentation: .named))
+                            // A glyph, as Workspace's other lists' rows have.
+                            LabeledContent {
+                                Text(document.modified, format: Self.modifiedStyle)
+                            } label: {
+                                Label(document.title, systemImage: "doc.text")
                             }
                         }
                         .matchedTransitionSource(id: document.id, in: rows)

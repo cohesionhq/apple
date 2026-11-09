@@ -158,8 +158,10 @@ private struct SegmentBar: View {
 }
 
 /// An arc for each status in its tint, its length its share of the counts,
-/// clockwise from the top in the counts' order, around how many are still
-/// going, or a check once everything is done. One status is a whole ring.
+/// clockwise from the top in the counts' order, around how many need the
+/// user, in amber, while any do (what the island leads with); else how many
+/// are running; else a check once everything is done. One status is a whole
+/// ring.
 private struct StatusRing: View {
     let state: CohesionActivitiesAttributes.ContentState
     var diameter: CGFloat = 20
@@ -210,14 +212,16 @@ private struct StatusRing: View {
     }
 
     @ViewBuilder private var center: some View {
-        let going = state.runningCount + state.needsAttentionCount
-        if going > 0 {
-            Text(going, format: .number)
+        let needs = state.needsAttentionCount
+        let shown = needs > 0 ? needs : state.runningCount
+        if shown > 0 {
+            Text(shown, format: .number)
                 .font(.system(size: diameter * 0.45, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .padding(lineWidth)
+                .foregroundStyle(needs > 0 ? AnyShapeStyle(.orange) : AnyShapeStyle(.primary))
         } else {
             Image(systemName: state.overall.ringSymbol)
                 .font(.system(size: diameter * 0.4, weight: .bold))

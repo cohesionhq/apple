@@ -218,6 +218,15 @@ public struct MarkdownText: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(MarkdownMetrics.codePadding)
         }
+        // Fades out at the trailing edge, over the padding a short line
+        // leaves empty, so a long one reads as scrolling on rather than cut.
+        .mask {
+            HStack(spacing: 0) {
+                Rectangle()
+                LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 20)
+            }
+        }
         .background(.fill.tertiary, in: .rect(cornerRadius: MarkdownMetrics.blockCornerRadius))
     }
 
