@@ -66,8 +66,9 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done", systemImage: "checkmark", role: .confirm) { dismiss() }
+            // Nothing here waits to be saved, so it closes rather than confirms.
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close", systemImage: "xmark", role: .close) { dismiss() }
             }
         }
     }

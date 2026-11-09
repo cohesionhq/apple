@@ -26,11 +26,13 @@ struct ActorPlace: View {
 /// The icon of where a session stands: a dotted circle while it works, an amber
 /// raised hand while it needs the user, a check once done, a red cross once
 /// failed, a circled check once resolved. Read state isn't shown. It pops in
-/// again whenever the status changes.
+/// again whenever the status changes. On a selected row's accent it takes the
+/// row's colour, as amber or red on the accent can't be read.
 struct ActorSessionStatusIcon: View {
     let status: ActorSessionStatus
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
         ZStack {
@@ -45,7 +47,7 @@ struct ActorSessionStatusIcon: View {
     @ViewBuilder
     private var symbol: some View {
         let image = Image(systemName: status.symbol)
-        if let tint = status.tint {
+        if let tint = status.tint, prominence != .increased {
             image.foregroundStyle(tint)
         } else {
             image
@@ -60,6 +62,7 @@ struct ActorSidebarRow: View {
     let session: ActorSession
 
     @Environment(AppModel.self) private var model
+    @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
         let status = model.vocabulary.label(of: session.status)
@@ -73,7 +76,8 @@ struct ActorSidebarRow: View {
                     .lineLimit(1)
             }
             .font(.subheadline)
-            .foregroundStyle(session.status.wordsStyle)
+            // Selected, the row's own secondary: see `ActorSessionStatusIcon`.
+            .foregroundStyle(prominence == .increased ? AnyShapeStyle(.secondary) : session.status.wordsStyle)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(rowLabel(session, status: status))

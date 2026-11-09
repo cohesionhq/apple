@@ -73,8 +73,9 @@ struct AgentInfoView: View {
             .toolbar(removing: .title)
             #endif
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .confirm) { dismiss() }
+                // Nothing here waits to be saved, so it closes rather than confirms.
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close", systemImage: "xmark", role: .close) { dismiss() }
                 }
             }
             .task { await watchContext() }

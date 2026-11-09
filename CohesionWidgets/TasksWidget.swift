@@ -245,8 +245,6 @@ private struct TasksList: View {
 
     @Environment(\.widgetFamily) private var family
 
-    private var columns: Int { family == .systemExtraLarge ? 2 : 1 }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
@@ -283,20 +281,15 @@ private struct TasksList: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// `shown` rows, down each column in turn.
+    /// The first `shown` rows.
     private func rows(shown: Int) -> some View {
-        let perColumn = (shown + columns - 1) / columns
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 16) {
-                ForEach(0..<columns, id: \.self) { column in
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(listing.tasks.prefix(shown).dropFirst(column * perColumn).prefix(perColumn)) { task in
-                            TaskWidgetRow(task: task, workspaceNames: listing.workspaceNames, today: today)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: family == .systemExtraLarge ? 10 : 6) {
+                ForEach(listing.tasks.prefix(shown)) { task in
+                    TaskWidgetRow(task: task, workspaceNames: listing.workspaceNames, today: today)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             if listing.total > shown {
                 Text("\(listing.total - shown) more")
                     .font(.caption)
@@ -333,7 +326,9 @@ private struct TaskWidgetRow: View {
                     switch family {
                     case .systemSmall:
                         title
-                    case .systemMedium:
+                    // One line each where it's wide: an extra large widget is
+                    // one list, its dates and flags in a column at the end.
+                    case .systemMedium, .systemExtraLarge:
                         title
                         Spacer(minLength: 0)
                         due
@@ -390,7 +385,8 @@ private struct TaskWidgetRow: View {
         }
     }
 
-    /// Today, Tomorrow or the day it's due, orange once it's past.
+    /// Today, Tomorrow or the day it's due, red once it's past, as the app's
+    /// rows have it (orange is for what needs the user).
     @ViewBuilder
     private var due: some View {
         if let dueDate = task.dueDate, let day = CalendarDay.date(dueDate) {
@@ -405,7 +401,7 @@ private struct TaskWidgetRow: View {
                 }
             }
             .font(.caption)
-            .foregroundStyle(day < Calendar.current.startOfDay(for: today) ? Color.orange : .secondary)
+            .foregroundStyle(day < Calendar.current.startOfDay(for: today) ? Color.red : .secondary)
             .lineLimit(1)
             .fixedSize()
         }

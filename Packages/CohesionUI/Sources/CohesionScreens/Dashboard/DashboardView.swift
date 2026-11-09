@@ -73,7 +73,8 @@ struct DashboardView: View {
                     composerHeight = $0.height
                 }
                 #endif
-                .padding(.bottom, isLifted ? 0 : 16)
+                // What's New's heading brings its own room above it.
+                .padding(.bottom, isLifted ? 0 : 4)
                 .listRowInsets(.vertical, isLifted ? 0 : nil)
                 .modifier(BareRow())
                 // Gone rather than invisible, so nothing can tap or scroll to it.

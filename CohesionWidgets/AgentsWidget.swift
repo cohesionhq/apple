@@ -79,7 +79,7 @@ struct AgentsWidgetView: View {
         case .agents(let agents) where agents.isEmpty:
             WidgetMessage(text: "All caught up.", systemImage: "checkmark.circle")
         case .agents(let agents):
-            AgentRows(agents: agents, limit: family == .systemLarge ? 6 : 3)
+            AgentRows(agents: agents, limit: family == .systemLarge ? 6 : 3, isLarge: family == .systemLarge)
         case .unpaired:
             WidgetMessage(text: "Open Cohesion to pair.", systemImage: "link")
         case .unreachable:
@@ -156,16 +156,34 @@ private struct CaughtUpMark: View {
     }
 }
 
-/// A row per agent, each a link to its chat, and how many more don't fit.
+/// A heading with how many agents need the user, as the Tasks widget heads
+/// its list, then a row per agent, each a link to its chat, and how many
+/// more don't fit. A large widget's rows are roomier.
 private struct AgentRows: View {
     let agents: [Agent]
     let limit: Int
+    let isLarge: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: isLarge ? 14 : 8) {
+            HStack(spacing: 6) {
+                // The Intelligence tab's mark, where the agents live.
+                Image(systemName: "sparkles.2")
+                    .foregroundStyle(Color.accentColor)
+                    .widgetAccentable()
+                    .accessibilityHidden(true)
+                Text("Need You")
+                    .fontWeight(.semibold)
+                Spacer(minLength: 0)
+                Text(agents.count, format: .number)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+            .accessibilityElement(children: .combine)
             ForEach(agents.prefix(limit)) { agent in
                 Link(destination: AppLink.agent(agent.id).url) {
-                    AgentRow(agent: agent)
+                    AgentRow(agent: agent, diameter: isLarge ? 40 : 32)
                 }
             }
             if agents.count > limit {
@@ -183,10 +201,11 @@ private struct AgentRows: View {
 /// needs the user when it isn't working.
 private struct AgentRow: View {
     let agent: Agent
+    var diameter: CGFloat = 32
 
     var body: some View {
         HStack(spacing: 10) {
-            AgentAvatar(name: agent.name, emoji: agent.emoji, color: agent.color, diameter: 32)
+            AgentAvatar(name: agent.name, emoji: agent.emoji, color: agent.color, diameter: diameter)
             VStack(alignment: .leading, spacing: 0) {
                 Text(agent.name)
                     .font(.subheadline.weight(.semibold))

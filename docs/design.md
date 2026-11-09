@@ -116,7 +116,8 @@ agents, then the actors), leaving out what the apps have no screen for:
   the sheet (Done, Add, Save, Attach) is `checkmark` with `.confirm`,
   except a composer's Send or Start, `arrow.up` with `.confirm` as the
   agent chat's Send; a Done or Close on the leading side is `xmark` with
-  `.close`.
+  `.close`. A sheet with nothing to save (Settings, an agent's info) has only
+  that Close, never a checkmark, which reads as saving.
 - **A row that opens a page, in a list of pages, has a `SymbolIcon`**
   (`Label(_:systemImage:color:)`), a white symbol on a colored gradient, as
   Settings and an agent's sheet do. Memories is `brain` on pink in both.
