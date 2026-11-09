@@ -7,19 +7,23 @@ import UIKit
 
 /// Registers this device with cohesiond using the setup code it printed.
 struct PairingView: View {
-    /// What the device is called, as a new client's name.
-    private static var deviceName: String {
+    /// The name a new client is offered: the device's name and the app's,
+    /// as `generatedClientName(device:client:)` formats them. What the user
+    /// types over it is registered as typed.
+    private static var generatedName: String {
         #if os(iOS)
-        UIDevice.current.name
+        let device: String? = UIDevice.current.name
         #else
-        Host.current().localizedName ?? "Mac"
+        let device = Host.current().localizedName
         #endif
+        let app = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+        return generatedClientName(device: device, client: app ?? "Cohesion")
     }
 
     @Environment(AppModel.self) private var model
 
     @State private var setupCode = ""
-    @State private var clientName = deviceName
+    @State private var clientName = generatedName
     @State private var isPairing = false
     @State private var error: (any Error)?
 
