@@ -24,7 +24,7 @@ xcodebuild -scheme CohesionMac -destination 'platform=macOS' CODE_SIGNING_ALLOWE
 Simulator and unsigned Mac builds need no Apple developer account. To run
 on a device, pick your own team under Signing & Capabilities for each
 target; the project names none. Keep the bundle identifiers
-(`com.hellocohesion.plus…`) only if you can sign for them; otherwise
+(`com.hellocohesion.app…`) only if you can sign for them; otherwise
 change them, along with the keychain group in the entitlements.
 
 Pushes and Live Activities arrive through Cohesion Cloud

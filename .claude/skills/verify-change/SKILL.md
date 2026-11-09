@@ -75,7 +75,7 @@ data. Pick a booted simulator from `xcrun simctl list devices booted`:
 SIM='iPhone 18 Pro'
 xcodebuild -scheme Cohesion -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/cohesion-apple-dd -quiet build
 xcrun simctl install "$SIM" /tmp/cohesion-apple-dd/Build/Products/Debug-iphonesimulator/Cohesion.app
-xcrun simctl launch --terminate-running-process "$SIM" com.hellocohesion.plus
+xcrun simctl launch --terminate-running-process "$SIM" com.hellocohesion.app
 sleep 3; xcrun simctl io "$SIM" screenshot /tmp/cohesion-apple.png
 ```
 

@@ -15,7 +15,7 @@ builds the four iOS targets, since the app embeds its three extensions; the
 
 | Target | Folder | What it is |
 | --- | --- | --- |
-| `Cohesion` | `Cohesion/` | The app, iPhone and iPad (`com.hellocohesion.plus`): its tabs and sidebar, Settings, pushes. |
+| `Cohesion` | `Cohesion/` | The app, iPhone and iPad (`com.hellocohesion.app`): its tabs and sidebar, Settings, pushes. |
 | `CohesionMac` | `CohesionMac/` | The app on the Mac (`com.hellocohesion.plus.mac`, named Cohesion): its window, Settings window and menu bar. |
 | `CohesionShare` | `CohesionShare/` | The share extension: sends a shared URL to an agent's chat. |
 | `CohesionWidgets` | `CohesionWidgets/` | The Agents and Tasks widgets, the activities Live Activity and the controls. |

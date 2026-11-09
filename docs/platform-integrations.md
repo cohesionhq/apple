@@ -9,13 +9,13 @@ ask (`CLAUDE.md`).
 
 | Target | Bundle id | Entitlements | Info.plist |
 | --- | --- | --- | --- |
-| `Cohesion` | `com.hellocohesion.plus` | `aps-environment`, communication notifications, keychain group | `cohesionplus` URL scheme, Live Activities (and frequent updates), `INSendMessageIntent` |
+| `Cohesion` | `com.hellocohesion.app` | `aps-environment`, communication notifications, keychain group | `cohesionplus` URL scheme, Live Activities (and frequent updates), `INSendMessageIntent` |
 | `CohesionShare` | `….share` | keychain group | share extension, one web URL |
 | `CohesionWidgets` | `….widgets` | keychain group | WidgetKit extension |
 | `CohesionNotificationService` | `….notificationservice` | none | notification service |
 | `CohesionMac` | `….mac` | none beyond the sandbox's: outgoing connections, user-selected files read-only (build settings) | local network description, arbitrary loads as on iOS |
 
-The keychain group is `$(AppIdentifierPrefix)com.hellocohesion.plus` in
+The keychain group is `$(AppIdentifierPrefix)com.hellocohesion.app` in
 each iOS target's `.entitlements`. There is no App Group.
 
 ## The Mac
