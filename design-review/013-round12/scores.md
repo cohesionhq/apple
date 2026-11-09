@@ -1,8 +1,7 @@
 # Round 12 scores
 
 Baseline through round 12 on the core set in `../CORE.txt`. Grok's round-10
-review is beside it; its round-11 and round-12 reviews were running at commit
-time.
+review is beside it; its round-11 and round-12 reviews followed.
 
 ### Opus
 
@@ -34,14 +33,14 @@ time.
 
 | Category | Base | R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | R10 | R11 | R12 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Native | 6.4 | 6.4 | 6.3 | 6.7 | 6.3 | 7.5 | 7.0 | 7.3 | 7.3 | 6.8 | 6.7 | 6.4 | missing |
-| Typography | 5.8 | 6.1 | 6.0 | 6.2 | 5.8 | 6.5 | 6.4 | 6.2 | 6.6 | 6.3 | 6.3 | 6.1 | missing |
-| Hierarchy | 5.3 | 5.7 | 5.4 | 5.6 | 5.9 | 6.6 | 6.1 | 6.0 | 6.2 | 5.7 | 5.6 | 5.5 | missing |
-| Spacing & density | 5.2 | 5.4 | 5.5 | 5.9 | 5.4 | 6.4 | 5.9 | 5.8 | 6.5 | 5.5 | 6.0 | 5.8 | missing |
-| Color & contrast | 5.4 | 5.6 | 6.1 | 5.3 | 5.7 | 6.7 | 5.6 | 6.4 | 6.4 | 5.3 | 6.2 | 5.8 | missing |
-| Iconography | 6.5 | 6.0 | 6.4 | 6.2 | 6.4 | 6.8 | 6.3 | 7.0 | 6.6 | 6.5 | 5.8 | 5.3 | missing |
-| Consistency & polish | 4.7 | 4.9 | 4.6 | 5.0 | 5.0 | 6.1 | 5.5 | 5.7 | 6.0 | 5.4 | 5.7 | 5.1 | missing |
-| Overall | 5.5 | 5.5 | 5.5 | 5.7 | 5.6 | 6.5 | 6.0 | 6.3 | 6.4 | 5.9 | 6.0 | 5.6 | missing |
+| Native | 6.4 | 6.4 | 6.3 | 6.7 | 6.3 | 7.5 | 7.0 | 7.3 | 7.3 | 6.8 | 6.7 | 6.4 | 7.1 |
+| Typography | 5.8 | 6.1 | 6.0 | 6.2 | 5.8 | 6.5 | 6.4 | 6.2 | 6.6 | 6.3 | 6.3 | 6.1 | 6.5 |
+| Hierarchy | 5.3 | 5.7 | 5.4 | 5.6 | 5.9 | 6.6 | 6.1 | 6.0 | 6.2 | 5.7 | 5.6 | 5.5 | 6.2 |
+| Spacing & density | 5.2 | 5.4 | 5.5 | 5.9 | 5.4 | 6.4 | 5.9 | 5.8 | 6.5 | 5.5 | 6.0 | 5.8 | 6.1 |
+| Color & contrast | 5.4 | 5.6 | 6.1 | 5.3 | 5.7 | 6.7 | 5.6 | 6.4 | 6.4 | 5.3 | 6.2 | 5.8 | 5.8 |
+| Iconography | 6.5 | 6.0 | 6.4 | 6.2 | 6.4 | 6.8 | 6.3 | 7.0 | 6.6 | 6.5 | 5.8 | 5.3 | 6.6 |
+| Consistency & polish | 4.7 | 4.9 | 4.6 | 5.0 | 5.0 | 6.1 | 5.5 | 5.7 | 6.0 | 5.4 | 5.7 | 5.1 | 5.8 |
+| Overall | 5.5 | 5.5 | 5.5 | 5.7 | 5.6 | 6.5 | 6.0 | 6.3 | 6.4 | 5.9 | 6.0 | 5.6 | 6.2 |
 
 ## What changed in round 12, and why
 
