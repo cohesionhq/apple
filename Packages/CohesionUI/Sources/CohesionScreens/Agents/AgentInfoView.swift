@@ -51,7 +51,7 @@ struct AgentInfoView: View {
                     NavigationLink {
                         AgentCuesView(agent: agent)
                     } label: {
-                        Label("Cues", systemImage: "alarm.fill", color: .orange)
+                        Label("Cues", systemImage: "alarm.fill", color: .teal)
                     }
                     NavigationLink {
                         AgentRunsView(agent: agent)

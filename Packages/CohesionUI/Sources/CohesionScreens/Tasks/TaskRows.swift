@@ -328,8 +328,11 @@ private struct TaskRow: View {
                         if let due {
                             HStack(spacing: 3) {
                                 Image(systemName: "calendar")
-                                Text(due, format: .dateTime.month().day())
+                                Text(Self.dueWords(due))
                             }
+                            // Red once an open task's day has passed, as
+                            // Reminders marks it.
+                            .foregroundStyle(isOverdue(due) ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
                             .accessibilityElement(children: .combine)
                         }
                         if let assignee {
@@ -373,19 +376,35 @@ private struct TaskRow: View {
     }
 
     /// The size as the web shows it: its color on a faint wash of it.
+    /// A due day in words near today ("Today", "Tomorrow", "Yesterday"),
+    /// else its month and day.
+    private static func dueWords(_ day: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return "Today" }
+        if calendar.isDateInTomorrow(day) { return "Tomorrow" }
+        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        return day.formatted(.dateTime.month().day())
+    }
+
+    /// Whether an open task's due day is before today.
+    private func isOverdue(_ day: Date) -> Bool {
+        task.status == .incomplete && day < Calendar.current.startOfDay(for: .now)
+    }
+
+    /// A size as grey words on a grey capsule: a measure, not a status, so
+    /// it takes none of the colours that say one.
     private func sizePill(_ size: TaskSize) -> some View {
         let label = model.vocabulary.label(of: size)
-        let tint = model.vocabulary.tint(of: size)
         return HStack(spacing: 3) {
             Image(systemName: "ruler")
                 .imageScale(.small)
             Text(label)
         }
         .font(.caption2.weight(.medium))
-        .foregroundStyle(tint)
+        .foregroundStyle(.secondary)
         .padding(.horizontal, 7)
         .padding(.vertical, 2)
-        .background(tint.opacity(0.15), in: .capsule)
+        .background(.fill.tertiary, in: .capsule)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Size: \(label)")
     }

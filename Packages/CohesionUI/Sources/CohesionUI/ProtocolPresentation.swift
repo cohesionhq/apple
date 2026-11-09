@@ -91,15 +91,16 @@ public extension AgentForwardedItem.Kind {
 // MARK: - Actors
 
 public extension ActorSessionStatus {
-    /// A dotted circle while it works, a raised hand while it needs the user,
-    /// a check once done, a cross once failed, a circled check once resolved.
+    /// One family of circled marks: a dotted circle while it works, a raised
+    /// hand while it needs the user, a check once done, a cross once failed,
+    /// a filled check once resolved.
     var symbol: String {
         switch self {
         case .working: "circle.dotted"
-        case .needsAttention: "hand.raised.fill"
-        case .idle: "checkmark"
+        case .needsAttention: "hand.raised.circle.fill"
+        case .idle: "checkmark.circle"
         case .failed: "xmark.circle"
-        case .resolved: "checkmark.circle"
+        case .resolved: "checkmark.circle.fill"
         }
     }
 
@@ -196,7 +197,9 @@ public extension Vocabulary {
 public extension TaskPriority {
     static let flagSymbol = "flag.fill"
 
-    /// The flag's color, as the web UI tints it; `nil` for no priority.
+    /// The flag's color: grey for low and medium, so the accent stays for
+    /// actions and what's unread, orange for high and red for urgent; `nil`
+    /// for no priority.
     var tint: Color? {
         flagColor.map(Color.init)
     }
@@ -220,8 +223,8 @@ public extension TaskPriority {
     private var flagColor: UIColor? {
         switch self {
         case .none: nil
-        case .low: .secondaryLabel
-        case .medium: UIColor(named: "AccentColor") ?? .tintColor
+        case .low: .tertiaryLabel
+        case .medium: .secondaryLabel
         case .high: .systemOrange
         case .urgent: .systemRed
         }
@@ -230,8 +233,8 @@ public extension TaskPriority {
     private var flagColor: NSColor? {
         switch self {
         case .none: nil
-        case .low: .secondaryLabelColor
-        case .medium: NSColor(named: "AccentColor") ?? .controlAccentColor
+        case .low: .tertiaryLabelColor
+        case .medium: .secondaryLabelColor
         case .high: .systemOrange
         case .urgent: .systemRed
         }

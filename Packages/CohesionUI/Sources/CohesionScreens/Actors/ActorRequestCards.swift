@@ -183,8 +183,16 @@ struct ActorPermissionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .fontWeight(.medium)
+            // Amber while it waits on the user, as the session's status is.
+            Label {
+                Text(title)
+                    .fontWeight(.semibold)
+            } icon: {
+                if !isSettled {
+                    Image(systemName: ActorSessionStatus.needsAttention.symbol)
+                        .foregroundStyle(.orange)
+                }
+            }
             switch request.subject {
             case .command(let command, let cwd):
                 CodeBlock(text: command)
@@ -221,9 +229,9 @@ struct ActorPermissionCard: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(.fill.tertiary, in: .rect(cornerRadius: 8))
-                // Two equal columns, the allows over the denials, so four
-                // decisions read as one block rather than a ragged row.
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                // One clear first choice, Allow, beside a quiet Deny; the
+                // rest, for this session or stopping it, in a menu after them.
+                HStack(spacing: 8) {
                     decisionButtons
                 }
             }
@@ -233,20 +241,40 @@ struct ActorPermissionCard: View {
 
     @ViewBuilder
     private var decisionButtons: some View {
-        ForEach(request.decisions, id: \.self) { decision in
-            if decision == .allow {
-                Button { decide(decision) } label: { decisionLabel(decision) }
+        let decisions = request.decisions
+        let more = decisions.filter { $0 != .allow && $0 != .deny }
+        Group {
+            if decisions.contains(.allow) {
+                Button { decide(.allow) } label: { decisionLabel(.allow) }
                     .buttonStyle(.borderedProminent)
-            } else {
-                Button(role: decision == .abort ? .destructive : nil) { decide(decision) } label: { decisionLabel(decision) }
+            }
+            if decisions.contains(.deny) {
+                Button { decide(.deny) } label: { decisionLabel(.deny) }
                     .buttonStyle(.bordered)
+                    // Neutral: the accent is for the action that settles it.
+                    .tint(.primary)
+            }
+            if !more.isEmpty {
+                Menu {
+                    ForEach(more, id: \.self) { decision in
+                        Button(label(of: decision), role: decision == .abort ? .destructive : nil) { decide(decision) }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .frame(minHeight: 20)
+                }
+                .menuStyle(.button)
+                .buttonStyle(.bordered)
+                .tint(.primary)
+                .accessibilityLabel("More Decisions")
             }
         }
         .buttonBorderShape(.capsule)
+        .controlSize(.large)
         .disabled(isSending)
     }
 
-    /// A decision's words, filling its column.
+    /// A decision's words, filling what its row leaves it.
     private func decisionLabel(_ decision: ActorPermissionDecision) -> some View {
         Text(label(of: decision))
             .font(.subheadline.weight(.medium))

@@ -3,12 +3,11 @@ import CohesionScreens
 import CohesionUI
 import SwiftUI
 
-/// The iPad's sidebar, in the web's order: the workspace's pages (Dashboard,
-/// Today, Journal, Documents, Contacts) with one Tasks row after them, then the
-/// feeds and the kinds of resource it shows, each a section
-/// that collapses, then the agents and the actor sessions, with Settings at the
-/// foot. The workspace's name heads it,
-/// and picks another.
+/// The iPad's sidebar: the workspace's pages (Dashboard, Today, Journal,
+/// Documents, Contacts) with one Tasks row after them, then the agents and the
+/// actor sessions, then the kinds of resource it shows and the feeds, each a
+/// section that collapses, with Settings at the foot. The workspace's name
+/// heads it, and picks another.
 struct Sidebar: View {
     @Binding var selection: SidebarItem?
     let folders: [TaskFolder]

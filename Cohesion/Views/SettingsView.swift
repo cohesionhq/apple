@@ -19,7 +19,7 @@ struct SettingsView: View {
                     Label("Profile", systemImage: "person.crop.circle.fill", color: .orange)
                 }
                 NavigationLink { ModelSettingsView() } label: {
-                    Label("Agents", systemImage: "brain.head.profile.fill", color: .purple)
+                    Label("Agents", systemImage: "sparkles", color: .purple)
                 }
                 NavigationLink { MemorySettingsView() } label: {
                     Label("Memories", systemImage: "brain", color: .pink)

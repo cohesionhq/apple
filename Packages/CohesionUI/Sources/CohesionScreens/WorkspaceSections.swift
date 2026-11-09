@@ -42,10 +42,10 @@ public enum SidebarItem: Hashable {
     case actorSession(Int)
 }
 
-/// A sidebar's list, in the web's order: the workspace's pages, then its task
-/// lists, the feeds and the kinds of resource it shows,
-/// each a section that collapses, then the agents and the actor sessions. The
-/// iPad's and the Mac's sidebars both list this; what's around it is theirs.
+/// A sidebar's list: the workspace's pages and its task lists, then the agents
+/// and the actor sessions, so they show without scrolling, then the kinds of
+/// resource it shows and the feeds, each a section that collapses. The iPad's
+/// and the Mac's sidebars both list this; what's around it is theirs.
 public struct SidebarSections: View {
     let folders: [TaskFolder]
     /// The workspace's saved task views, in their order.
@@ -134,10 +134,9 @@ public struct SidebarSections: View {
         WorkspaceSections(
             folders: folders,
             savedViews: savedViews,
-            feeds: FeedSection(feeds: feeds, moveFeeds: moveFeeds, addFeed: addFeed) {
-                SidebarItem.page(.articles($0))
-            },
+            feeds: nil,
             kinds: kinds,
+            showsSources: false,
             moveSavedViews: moveSavedViews,
             moveKinds: moveKinds,
             editKinds: editKinds
@@ -154,14 +153,24 @@ public struct SidebarSections: View {
         ) {
             SidebarItem.actorSession($0)
         }
+        // What comes into the workspace from elsewhere, after the agents and
+        // actors, so those show without scrolling.
+        WorkspaceSources(
+            feeds: FeedSection(feeds: feeds, moveFeeds: moveFeeds, addFeed: addFeed) {
+                SidebarItem.page(.articles($0))
+            },
+            kinds: kinds,
+            moveKinds: moveKinds,
+            editKinds: editKinds
+        ) { SidebarItem.page($0) }
     }
 }
 
 /// The workspace's pages, in the web's order: Dashboard, Today, Journal,
-/// Documents and Contacts, then its task lists, unless `feeds` is `nil` the feeds, and the kinds of resource it shows, each a section
-/// that collapses. The iPad's
-/// sidebar leads with them, and they're the iPhone's Workspace tab, whose
-/// Dashboard and feeds are tabs of their own; `link` makes each row's value.
+/// Documents and Contacts, then its task lists, then unless `showsSources` is
+/// false its `WorkspaceSources`. The iPad's sidebar leads with them, and
+/// they're the iPhone's Workspace tab, whose Dashboard and feeds are tabs of
+/// their own; `link` makes each row's value.
 public struct WorkspaceSections<Link: Hashable>: View {
     /// Whether the Dashboard has a row, which it doesn't with a tab of its own.
     public let showsDashboard: Bool
@@ -172,6 +181,9 @@ public struct WorkspaceSections<Link: Hashable>: View {
     public let feeds: FeedSection<Link>?
     /// The kinds of resource the workspace shows, in their order.
     public let kinds: [ConnectorKind]
+    /// Whether the connectors and feeds follow the pages, as on the
+    /// Workspace tab; a sidebar lists them after its agents instead.
+    public let showsSources: Bool
     public let moveSavedViews: (IndexSet, Int) -> Void
     public let moveKinds: (IndexSet, Int) -> Void
     /// Opens the choice of which kinds the workspace shows.
@@ -184,6 +196,7 @@ public struct WorkspaceSections<Link: Hashable>: View {
         savedViews: [SavedTaskView],
         feeds: FeedSection<Link>?,
         kinds: [ConnectorKind],
+        showsSources: Bool = true,
         moveSavedViews: @escaping (IndexSet, Int) -> Void,
         moveKinds: @escaping (IndexSet, Int) -> Void,
         editKinds: @escaping () -> Void,
@@ -194,6 +207,7 @@ public struct WorkspaceSections<Link: Hashable>: View {
         self.savedViews = savedViews
         self.feeds = feeds
         self.kinds = kinds
+        self.showsSources = showsSources
         self.moveSavedViews = moveSavedViews
         self.moveKinds = moveKinds
         self.editKinds = editKinds
@@ -210,7 +224,7 @@ public struct WorkspaceSections<Link: Hashable>: View {
     }
 
     private enum SectionKey: String {
-        case tasks, feeds
+        case tasks
     }
 
     // Computed, since a generic type can't store a static.
@@ -232,29 +246,8 @@ public struct WorkspaceSections<Link: Hashable>: View {
             row(.documents, "Documents", systemImage: "doc.text")
             row(.contacts, "Contacts", systemImage: "person.crop.circle")
         }
-        connectorSection
-        if let feeds {
-            Section("Feeds", isExpanded: isExpanded(.feeds)) { feeds }
-        }
-    }
-
-    /// The kinds of resource the workspace shows, each opening its
-    /// resources, as the web's sidebar lists them after the workspace's
-    /// pages. Its section action, Edit, chooses them. It doesn't collapse, and
-    /// sits above the feeds.
-    private var connectorSection: some View {
-        Section {
-            ForEach(kinds) { entry in
-                NavigationLink(value: link(.resources(kindID: entry.id))) {
-                    ResourceKindLabel(entry: entry)
-                }
-            }
-            .onMove(perform: moveKinds)
-        } header: {
-            Text("Connectors")
-        }
-        .sectionActions {
-            Button("Edit", systemImage: "slider.horizontal.3", action: editKinds)
+        if showsSources {
+            WorkspaceSources(feeds: feeds, kinds: kinds, moveKinds: moveKinds, editKinds: editKinds, link: link)
         }
     }
 
@@ -271,6 +264,74 @@ public struct WorkspaceSections<Link: Hashable>: View {
             if expanded { collapsed.remove(key) } else { collapsed.insert(key) }
         }
     }
+}
+
+/// What comes into the workspace from elsewhere: the kinds of resource it
+/// shows, then the feeds, a section that collapses. The Workspace tab lists
+/// them after its pages; a sidebar after its agents and actors.
+public struct WorkspaceSources<Link: Hashable>: View {
+    /// The feeds and what their section does; `nil` to leave them out.
+    public let feeds: FeedSection<Link>?
+    public let kinds: [ConnectorKind]
+    public let moveKinds: (IndexSet, Int) -> Void
+    public let editKinds: () -> Void
+    public let link: (WorkspacePage) -> Link
+
+    public init(
+        feeds: FeedSection<Link>?,
+        kinds: [ConnectorKind],
+        moveKinds: @escaping (IndexSet, Int) -> Void,
+        editKinds: @escaping () -> Void,
+        link: @escaping (WorkspacePage) -> Link
+    ) {
+        self.feeds = feeds
+        self.kinds = kinds
+        self.moveKinds = moveKinds
+        self.editKinds = editKinds
+        self.link = link
+    }
+
+    /// Whether the feeds are collapsed; remembered across launches.
+    @State private var isFeedsCollapsed = UserDefaults.standard.bool(forKey: feedsCollapsedKey) {
+        didSet { UserDefaults.standard.set(isFeedsCollapsed, forKey: Self.feedsCollapsedKey) }
+    }
+
+    // Computed, since a generic type can't store a static.
+    private static var feedsCollapsedKey: String { "workspaceFeedsCollapsed" }
+
+    public var body: some View {
+        connectorSection
+        if let feeds {
+            Section("Feeds", isExpanded: Binding {
+                !isFeedsCollapsed
+            } set: { expanded in
+                withAnimation { isFeedsCollapsed = !expanded }
+            }) { feeds }
+        }
+    }
+
+    /// The kinds of resource the workspace shows, each opening its
+    /// resources, as the web's sidebar lists them after the workspace's
+    /// pages. Its section action, Edit, chooses them. It doesn't collapse, and
+    /// sits above the feeds.
+    private var connectorSection: some View {
+        Section {
+            ForEach(kinds) { entry in
+                NavigationLink(value: link(.resources(kindID: entry.id))) {
+                    ResourceKindLabel(entry: entry, namesConnector: kinds.contains {
+                        $0.id != entry.id && $0.kind.plural == entry.kind.plural
+                    })
+                }
+            }
+            .onMove(perform: moveKinds)
+        } header: {
+            Text("Connectors")
+        }
+        .sectionActions {
+            Button("Edit", systemImage: "slider.horizontal.3", action: editKinds)
+        }
+    }
+
 }
 
 /// The workspace's pages, then its task lists: beside the iPad's sidebar one

@@ -112,12 +112,15 @@ struct ResourceKindsView: View {
 /// it.
 struct ResourceKindLabel: View {
     let entry: ConnectorKind
+    /// Whether the title names the connector too ("Linear Issues"), where
+    /// another connector's kind has the same name.
+    var namesConnector = false
 
     @ScaledMetric(relativeTo: .body) private var iconSize = 20
 
     var body: some View {
         Label {
-            Text(entry.kind.plural)
+            Text(namesConnector ? "\(entry.connector.title) \(entry.kind.plural)" : entry.kind.plural)
         } icon: {
             ServiceIcon(icon: entry.connector.icon, name: entry.connector.title, size: iconSize)
         }

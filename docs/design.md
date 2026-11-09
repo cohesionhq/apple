@@ -21,6 +21,11 @@ where this page says. Direction: the apps' surface and the goal's
   actor session needing attention, a reconnecting socket, an inactive
   extension, an article not fetched). Red for failed or revoked, green for
   connected.
+- **Tasks**: a size is grey words on a grey capsule, a measure rather than a
+  status; a priority's flag is grey for low and medium, orange for high and red
+  for urgent, so the accent stays for actions and what's unread. An open task's
+  due day reads "Today", "Tomorrow" or "Yesterday" near today, and is red once
+  past, as Reminders marks it.
 - **Everything else** is the system's: `.primary`, `.secondary`, grouped
   backgrounds. Dark mode follows the system; there's no app setting.
 
@@ -59,18 +64,19 @@ agents, then the actors), leaving out what the apps have no screen for:
 - **iPad**: a two-column `NavigationSplitView`, balanced so the sidebar
   stays beside the detail in portrait too. The sidebar (`Sidebar`) is
   headed by the workspace's name, whose title menu picks another, and
-  lists Dashboard, Today, Journal, Documents, Contacts and Tasks; then Feeds, a
-  section that collapses and lists what the web's Articles page lists in its
-  own column; then Connectors, the kinds
-  of resource the workspace shows (each by its connector's icon, as the
-  web lists them after its pages), then Edit…; then Agents, one section
-  (pinned first, then each team's, then those on no team, a row's team as its
-  subline; New Agent and Teams, which renames or deletes a team, are section
-  actions) and
-  Actors (the current sessions; New Session is a section action), with each
+  lists Dashboard, Today, Journal, Documents, Contacts and Tasks; then Agents,
+  one section (pinned first, then each team's, then those on no team, a row's
+  team as its subline; New Agent and Teams, which renames or deletes a team, are
+  section actions) and Actors (the current sessions; New Session is a section
+  action), so the app's core shows without scrolling; then Connectors, the kinds
+  of resource the workspace shows (each by its connector's icon, named with
+  its connector where two connectors' kinds share a name), then Edit…; then
+  Feeds, a section that collapses and lists what the web's Articles page lists
+  in its own column, with each
   section's collapse remembered across launches; the sidebar's navigation bar
-  has the same overflow menu with Actor Usage. Settings, with the
-  connection's dot, is at the foot. The detail shows what's selected
+  has the same overflow menu with Actor Usage. Settings is at the foot, with
+  the connection's dot only while the connection isn't healthy, as on the
+  iPhone's Settings button. The detail shows what's selected
   (`SidebarItem`), the Dashboard at launch and on switching workspace; Contacts opens the list, which pushes
   a contact. Pushes zoom from their source (`zoomsOnIPad`).
   - Tasks is one row (`TaskSection`), to leave the list room, which opens the
@@ -221,9 +227,11 @@ An agent's chat reads as an actor session's transcript does, on every device:
   70% of a column 600 points or wider; narrower, the chat's stops
   `bubbleInset` short of the far edge, the transcript's fills the column.
 - **Cards stay cards**, one look in both: a received bubble's grey with its
-  corners, an actor's questions and permissions as an agent's choices are;
-  a permission's decisions are two equal columns, the allows over the
-  denials. Quiet lines stay quiet, on the leading edge the
+  corners, an actor's questions and permissions as an agent's choices are.
+  A permission waiting on the user has the amber raised hand by its title, and
+  one first choice: Allow, prominent, beside a neutral Deny, with the other
+  decisions (for the session, or deny and stop) in a menu after them. Quiet
+  lines stay quiet, on the leading edge the
   text starts from.
 - **A reaction** hangs off the bottom corner of a bubble or card, and sits
   under a flat reply at its leading edge, after its images. A reply's text

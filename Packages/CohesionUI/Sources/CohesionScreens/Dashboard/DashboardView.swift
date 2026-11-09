@@ -129,6 +129,10 @@ struct DashboardView: View {
         #endif
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.inline)
+        #if os(iOS)
+        // The greeting heads the page; the title names the window.
+        .toolbar(removing: .title)
+        #endif
         .sizedSheet(isPresented: $isAddingToJournal) {
             QuickJournalSheet(workspaceID: workspaceID) {
                 journalAdds += 1

@@ -754,7 +754,11 @@ struct SettingsButton: View {
             // symbol alone.
             HStack {
                 Image(systemName: "gearshape")
-                    .overlay(alignment: .topTrailing) { dot }
+                    // Only when something's wrong: a dot on a healthy
+                    // connection reads as a notification.
+                    .overlay(alignment: .topTrailing) {
+                        if connection != .connected { dot }
+                    }
                 if showsTitle { Text("Settings") }
             }
         }

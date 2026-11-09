@@ -64,6 +64,7 @@ public struct ActorSessionView: View {
     @State private var columnWidth: CGFloat = 0
     /// Whether the composer's sheet is up.
     @State private var isComposing = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(sessionID: Int, actors: [Actor], clients: [Client]) {
         self.sessionID = sessionID
@@ -128,11 +129,11 @@ public struct ActorSessionView: View {
     /// How many characters of its title a pushed session's bar shows.
     private static let barTitleLength = 26
 
-    /// `title` as the bar shows it: cut short when the session was pushed,
-    /// since the back button pushes a long title, and the actor's place
-    /// under it, off centre.
+    /// `title` as the bar shows it: cut short when the session was pushed on
+    /// a phone, since the back button pushes a long title, and the actor's
+    /// place under it, off centre. A regular width has room for it.
     private func barTitle(_ title: String) -> String {
-        guard isPresented, title.count > Self.barTitleLength else { return title }
+        guard isPresented, sizeClass != .regular, title.count > Self.barTitleLength else { return title }
         return "\(title.prefix(Self.barTitleLength))…"
     }
 
@@ -217,6 +218,8 @@ public struct ActorSessionView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom, spacing: 24) { foot(of: session) }
+        // Text fades out under the bar and the foot, as the agent chat's does.
+        .scrollEdgeEffectStyle(.soft, for: [.top, .bottom])
         .sizedSheet(isPresented: $isComposing) { composer(of: session) }
     }
 
