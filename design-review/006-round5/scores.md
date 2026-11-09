@@ -2,8 +2,8 @@
 
 Baseline through round 5 on the core set in `../CORE.txt` (iPhone, iPad
 landscape, and from round 3 the widgets and Live Activity). Grok's round-3
-review returned late and is in `../004-round3/`; its round-4 review was still
-running at commit time, and round 5 wasn't sent to Grok so as not to stack a
+review returned late and is in `../004-round3/`; its round-4 review returned late
+and is in `../005-round4/`; round 5 wasn't sent to Grok so as not to stack a
 third run on a CLI that kept losing its connection.
 
 ### Opus
@@ -36,14 +36,14 @@ third run on a CLI that kept losing its connection.
 
 | Category | Base | R1 | R2 | R3 | R4 | R5 |
 |---|---|---|---|---|---|---|
-| Native | 6.4 | 6.4 | 6.3 | 6.7 | missing | missing |
-| Typography | 5.8 | 6.1 | 6.0 | 6.2 | missing | missing |
-| Hierarchy | 5.3 | 5.7 | 5.4 | 5.6 | missing | missing |
-| Spacing & density | 5.2 | 5.4 | 5.5 | 5.9 | missing | missing |
-| Color & contrast | 5.4 | 5.6 | 6.1 | 5.3 | missing | missing |
-| Iconography | 6.5 | 6.0 | 6.4 | 6.2 | missing | missing |
-| Consistency & polish | 4.7 | 4.9 | 4.6 | 5.0 | missing | missing |
-| Overall | 5.5 | 5.5 | 5.5 | 5.7 | missing | missing |
+| Native | 6.4 | 6.4 | 6.3 | 6.7 | 6.3 | missing |
+| Typography | 5.8 | 6.1 | 6.0 | 6.2 | 5.8 | missing |
+| Hierarchy | 5.3 | 5.7 | 5.4 | 5.6 | 5.9 | missing |
+| Spacing & density | 5.2 | 5.4 | 5.5 | 5.9 | 5.4 | missing |
+| Color & contrast | 5.4 | 5.6 | 6.1 | 5.3 | 5.7 | missing |
+| Iconography | 6.5 | 6.0 | 6.4 | 6.2 | 6.4 | missing |
+| Consistency & polish | 4.7 | 4.9 | 4.6 | 5.0 | 5.0 | missing |
+| Overall | 5.5 | 5.5 | 5.5 | 5.7 | 5.6 | missing |
 
 ## What changed in round 5, and why
 
