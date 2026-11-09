@@ -265,7 +265,7 @@ private struct TasksList: View {
     private var header: some View {
         HStack(spacing: 6) {
             Image(systemName: listing.systemImage)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.widgetAccent)
                 .widgetAccentable()
                 .accessibilityHidden(true)
             Text(listing.title)
@@ -409,11 +409,14 @@ private struct TaskWidgetRow: View {
 
     @ViewBuilder
     private var flag: some View {
+        let image = Image(systemName: TaskPriority.flagSymbol)
+            .imageScale(.small)
+            .accessibilityHidden(true)
         if let tint = task.priority.tint {
-            Image(systemName: TaskPriority.flagSymbol)
-                .imageScale(.small)
-                .foregroundStyle(tint)
-                .accessibilityHidden(true)
+            image.foregroundStyle(tint)
+        } else {
+            // Its room kept, so the dates before it line up down the list.
+            image.hidden()
         }
     }
 }
@@ -429,7 +432,7 @@ private struct TaskCheckbox: ToggleStyle {
             } icon: {
                 Image(systemName: configuration.isOn ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(configuration.isOn ? Color.accentColor : .secondary)
+                    .foregroundStyle(configuration.isOn ? Color.widgetAccent : .secondary)
                     .widgetAccentable()
                     .contentShape(.circle)
             }

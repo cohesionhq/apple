@@ -14,3 +14,9 @@ struct CohesionWidgets: WidgetBundle {
         NewActorSessionControl()
     }
 }
+
+extension Color {
+    /// The app's accent, by name from the asset catalog the extension shares
+    /// with the app: `Color.accentColor` draws the system's blue in a widget.
+    static let widgetAccent = Color("AccentColor")
+}

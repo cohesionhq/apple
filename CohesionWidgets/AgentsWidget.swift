@@ -79,7 +79,7 @@ struct AgentsWidgetView: View {
         case .agents(let agents) where agents.isEmpty:
             WidgetMessage(text: "All caught up.", systemImage: "checkmark.circle")
         case .agents(let agents):
-            AgentRows(agents: agents, limit: family == .systemLarge ? 6 : 3, isLarge: family == .systemLarge)
+            AgentsSpread(agents: agents, isLarge: family == .systemLarge)
         case .unpaired:
             WidgetMessage(text: "Open Cohesion to pair.", systemImage: "link")
         case .unreachable:
@@ -128,7 +128,8 @@ private struct SmallAgents: View {
             } else {
                 Text(agents.count, format: .number)
                     .font(.largeTitle.weight(.semibold))
-                Text(agents.count == 1 ? agents[0].name : "Need you")
+                // Read on from the count: "3 need you", as the larger sizes say it.
+                Text(agents.count == 1 ? agents[0].name : "need you")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -156,44 +157,73 @@ private struct CaughtUpMark: View {
     }
 }
 
-/// A heading with how many agents need the user, as the Tasks widget heads
-/// its list, then a row per agent, each a link to its chat, and how many
-/// more don't fit. A large widget's rows are roomier.
-private struct AgentRows: View {
+/// The small widget's look, given room: the agents' avatars overlapping,
+/// each a link to its chat and larger than the small's, then how many need
+/// the user beside who they are. A large widget adds a row per agent under
+/// them, saying what each is doing.
+private struct AgentsSpread: View {
     let agents: [Agent]
-    let limit: Int
     let isLarge: Bool
 
+    /// The most avatars drawn; past it, a disc says how many more.
+    private var slots: Int { isLarge ? 5 : 4 }
+    private var diameter: CGFloat { isLarge ? 96 : 56 }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: isLarge ? 14 : 8) {
-            HStack(spacing: 6) {
-                // The Intelligence tab's mark, where the agents live.
-                Image(systemName: "sparkles.2")
-                    .foregroundStyle(Color.accentColor)
-                    .widgetAccentable()
-                    .accessibilityHidden(true)
-                Text("Need You")
-                    .fontWeight(.semibold)
-                Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: isLarge ? 14 : 4) {
+            avatars
+            if !isLarge { Spacer(minLength: 0) }
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(agents.count, format: .number)
-                    .fontWeight(.semibold)
+                    .font(.largeTitle.weight(.semibold))
+                Text(sentence)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
-            .font(.subheadline)
             .accessibilityElement(children: .combine)
-            ForEach(agents.prefix(limit)) { agent in
-                Link(destination: AppLink.agent(agent.id).url) {
-                    AgentRow(agent: agent, diameter: isLarge ? 40 : 32)
+            if isLarge {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(agents.prefix(3)) { agent in
+                        Link(destination: AppLink.agent(agent.id).url) {
+                            AgentRow(agent: agent, diameter: 32)
+                        }
+                    }
+                    if agents.count > 3 {
+                        Text("\(agents.count - 3) more")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                Spacer(minLength: 0)
             }
-            if agents.count > limit {
-                Text("\(agents.count - limit) more")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var avatars: some View {
+        let shown = agents.count > slots ? slots - 1 : agents.count
+        return HStack(spacing: -diameter * 0.2) {
+            ForEach(agents.prefix(shown)) { agent in
+                Link(destination: AppLink.agent(agent.id).url) {
+                    AgentAvatar(name: agent.name, emoji: agent.emoji, color: agent.color, diameter: diameter)
+                }
+                .accessibilityLabel(agent.name)
+            }
+            if agents.count > shown {
+                Text("+\(agents.count - shown)")
+                    .font(.system(size: diameter * 0.32, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: diameter, height: diameter)
+                    .background(.fill.secondary, in: .circle)
+            }
+        }
+    }
+
+    /// Who needs the user, by name: "Ada, Milo and Juno need you."
+    private var sentence: String {
+        let names = agents.map(\.name).formatted(.list(type: .and))
+        return agents.count == 1 ? "\(names) needs you." : "\(names) need you."
     }
 }
 
