@@ -736,3 +736,20 @@ public enum Markdown {
         return spans
     }
 }
+
+extension Markdown {
+    /// The first line of `source` with text in it, read as plain words for a
+    /// list row's preview: a heading's, quote's or list item's marker and
+    /// inline emphasis, code and link marks left out.
+    public nonisolated static func previewLine(_ source: String) -> String? {
+        for line in source.split(separator: "\n") {
+            var text = line.trimmingCharacters(in: .whitespaces)
+            text = text.replacing(/^(#{1,6}|>+|[-*+]( \[[ xX]\])?|\d+[.)])\s+/, with: "")
+            text = text.replacing(/!?\[([^\]]*)\]\([^)]*\)/) { String($0.1) }
+            text = text.replacing(/(\*\*|__|\*|_|`|~~)/, with: "")
+            text = text.trimmingCharacters(in: .whitespaces)
+            if !text.isEmpty, text.contains(where: \.isLetter) || text.contains(where: \.isNumber) { return text }
+        }
+        return nil
+    }
+}

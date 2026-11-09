@@ -21,9 +21,16 @@ public struct MarkdownText: View {
         case article
     }
 
+    /// What leads a list item: a bullet's or number's text, or a task
+    /// item's box, ticked once it's done.
+    private enum ListMarker {
+        case text(String)
+        case task(done: Bool)
+    }
+
     private enum Block {
         case heading(level: Int, text: AttributedString)
-        case listItem(marker: String, indent: Int, text: AttributedString)
+        case listItem(marker: ListMarker, indent: Int, text: AttributedString)
         case paragraph(AttributedString)
         case image(alt: String, source: URL?)
         /// Consecutive `>` lines, joined with line breaks.
@@ -133,12 +140,23 @@ public struct MarkdownText: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .listItem(let marker, let indent, let text):
             HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(marker)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                    .frame(minWidth: markerWidth, alignment: .leading)
-                Text(shadingCode(in: text))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                switch marker {
+                case .text(let marker):
+                    Text(marker)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .frame(minWidth: markerWidth, alignment: .leading)
+                    Text(shadingCode(in: text))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                case .task(let done):
+                    Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(done ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+                        .accessibilityLabel(done ? "Done" : "Not done")
+                        .frame(minWidth: markerWidth * 1.6, alignment: .leading)
+                    Text(shadingCode(in: text))
+                        .foregroundStyle(done ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .padding(.leading, CGFloat(indent) * indentStep)
         case .paragraph(let text):
@@ -343,13 +361,17 @@ public struct MarkdownText: View {
                 blocks.append(.heading(level: level, text: content))
             case .bullet(let indent):
                 nextNumber = nextNumber.filter { $0.key < indent }
-                blocks.append(.listItem(marker: "•", indent: indent, text: content))
+                if let (done, rest) = taskItem(content) {
+                    blocks.append(.listItem(marker: .task(done: done), indent: indent, text: rest))
+                } else {
+                    blocks.append(.listItem(marker: .text("•"), indent: indent, text: content))
+                }
             case .numbered(let indent):
                 nextNumber = nextNumber.filter { $0.key <= indent }
                 let (written, delimiter) = numberedMarker(in: text, line: line)
                 let number = nextNumber[indent] ?? written
                 nextNumber[indent] = number + 1
-                blocks.append(.listItem(marker: "\(number)\(delimiter)", indent: indent, text: content))
+                blocks.append(.listItem(marker: .text("\(number)\(delimiter)"), indent: indent, text: content))
             case .image(let alt, let source):
                 nextNumber.removeAll()
                 blocks.append(.image(alt: alt, source: URL(string: source, relativeTo: base)?.absoluteURL))
@@ -375,6 +397,21 @@ public struct MarkdownText: View {
     }
 
     /// The number a numbered item is written with, and the `.` or `)` after it.
+    /// A GFM task item's state and its text after the box, when `content`
+    /// opens with one ("[ ] ", "[x] ").
+    private static func taskItem(_ content: AttributedString) -> (done: Bool, rest: AttributedString)? {
+        let characters = content.characters
+        guard characters.count > 4 else { return nil }
+        let done: Bool
+        switch String(characters.prefix(4)) {
+        case "[ ] ": done = false
+        case "[x] ", "[X] ": done = true
+        default: return nil
+        }
+        let start = content.index(content.startIndex, offsetByCharacters: 4)
+        return (done, AttributedString(content[start...]))
+    }
+
     private static func numberedMarker(in text: Substring, line: Markdown.Line) -> (number: Int, delimiter: Character) {
         let range = line.marker!
         let utf16 = text.utf16

@@ -34,8 +34,8 @@ agents, then the actors), leaving out what the apps have no screen for:
   **Dashboard** (`rectangle.grid.1x2`) comes first and is picked at launch: it
   has no navigation bar, its greeting heading it, and pushes the chats and
   sessions its rows open, so Settings is on the other tabs and the workspace menu on Workspace's.
-  Then **Intelligence** (`sparkles.2`), untitled and inline, the tab naming it:
-  it lists the pinned agents as a grid, then the sidebar's one section without
+  Then **Intelligence** (`sparkles.2`), titled large as Feeds is:
+  it lists the pinned agents as a grid, four across, then the sidebar's one section without
   them (each team's, then those on no team, a row's team as its subline), which doesn't
   collapse, and whose section action, Teams, renames or deletes a team, as the
   sidebar's does; then
@@ -83,8 +83,8 @@ agents, then the actors), leaving out what the apps have no screen for:
     (only here, since the iPhone's pinned are in its grid), and a dot while
     unread: no counts.
     An actor session's row is its title, which shimmers while it works,
-    over its status as an icon and its name in secondary text (an amber
-    raised hand when it needs the user): no leading space, no unread mark.
+    over its status as an icon and its name in secondary text, both amber when
+    it needs the user, wherever it's listed: no leading space, no unread mark.
   - The detail's lists (tasks, journal, documents, contacts, articles,
     resources)
     are plain, not inset-grouped.
@@ -118,8 +118,9 @@ agents, then the actors), leaving out what the apps have no screen for:
 
 Recap and quick dispatch, in the platform's controls, one list in every shell: a
 plain `List` centred in `conversationColumnWidth`, the greeting and composer as
-rows without separators or backgrounds. The greeting is a step above a large
-title, with room above it. The composer sits in the page under the greeting, not
+rows without separators or backgrounds. The greeting leads the page at a large
+title's size, leading-aligned as a large title is, with the day under it in
+secondary text, as the web's Dashboard has it. The composer sits in the page under the greeting, not
 at the foot like the chat's: no keyboard comes up on opening it (the Mac's field
 takes focus, as its keyboard takes no room). It's one sheet of glass, and nothing
 on it has glass of its own: a borderless field, with attach and send at the
@@ -147,14 +148,17 @@ action, or ⌘Return, adds the note to today's entry as a paragraph of its own
 (`appendToJournal`, so what the entry holds is never replaced), and a toast
 confirms. A failure leaves the sheet open with the note and alerts.
 
-What's New is one native section, gone when empty, in this order: the sessions
-that need the user, with their status's words amber as well as the icon; those
-finished or failed and still unread; every working session as `.bordered` capsule
-chips (status icon and title, no shimmer) that wrap with no cap; then agents with
-unread messages, newest first, "New message · 5m ago" ("now" under a minute, or
-for a time ahead of this device's clock). What's listed is the
+What's New is a native section, gone when empty, in this order: the sessions
+that need the user, their status's words amber as well as the icon; those
+finished or failed and still unread; then agents with unread messages, newest
+first. Under it, **Working** lists every working session, its title
+shimmering. As the web's recap, the two are rows of one kind: a session's
+status icon in the slot an agent's avatar takes, so every title starts at one
+edge, over its status and how long ago it changed ("Needs you · 5m"), or for an
+agent "New message · 5m" ("now" under a minute, or for a time ahead of this
+device's clock). Each section's heading carries its count. What's listed is the
 daemon's status and unread state, across the whole server as sessions and agents
-are. A row or chip opens the session or chat: pushed on the Dashboard tab's own
+are. A row opens the session or chat: pushed on the Dashboard tab's own
 stack on iPhone (`dashboardPath`), so back returns here; selected beside the
 sidebar on iPad and the Mac.
 
@@ -216,7 +220,10 @@ An agent's chat reads as an actor session's transcript does, on every device:
 - **The user's message is an accent bubble on the trailing edge**, at most
   70% of a column 600 points or wider; narrower, the chat's stops
   `bubbleInset` short of the far edge, the transcript's fills the column.
-- **Cards stay cards**, and quiet lines stay quiet, on the leading edge the
+- **Cards stay cards**, one look in both: a received bubble's grey with its
+  corners, an actor's questions and permissions as an agent's choices are;
+  a permission's decisions are two equal columns, the allows over the
+  denials. Quiet lines stay quiet, on the leading edge the
   text starts from.
 - **A reaction** hangs off the bottom corner of a bubble or card, and sits
   under a flat reply at its leading edge, after its images. A reply's text
@@ -226,7 +233,8 @@ An agent's chat reads as an actor session's transcript does, on every device:
   included, which have no padding of their own. Everything a fork posts is one
   run: the question that opened it, its own questions, and a "Context rebuilt"
   line that fell in it, though that line carries no run.
-- **A fork's steps collapse into one quiet row** where it woke, as soon as it
+- **A fork's steps collapse into one row** on a faint fill, its bolt in the
+  agent's color, where it woke, as soon as it
   has a step: what woke it, then its step count at the trailing edge, rolling
   as a fork still going adds to it. The row stands in for the trigger's rule, and
   ends with no bare rule unless the fork said something to the user. Which
@@ -312,6 +320,9 @@ clipped to the circle. An emoji's share is the size it draws at: below
 a smaller one is drawn at 24pt and scaled down. `.symbol` (avatars where a
 symbol goes, in menu items and agents' rows) takes the initial at
 0.45. The notification service draws the standard ratios for `INPerson`.
+A person (a contact, or the user) is `ContactPhotoView`: their photo on a disc,
+or without one their initials, white on a grey gradient as the system's Contacts
+draws them, in a list as on their page.
 Never size a glyph by eye (`CLAUDE.md`, "Conventions").
 
 ## Haptics

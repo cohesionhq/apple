@@ -20,6 +20,11 @@ public final class CohesionClient {
     public var vocabulary = Vocabulary()
     /// Where the change socket stands.
     public var connection = ConnectionState.connecting
+    #if DEBUG
+    /// The replies a preview's client answers with in place of cohesiond's,
+    /// by command type and arguments: the JSON of the reply's `data`.
+    @ObservationIgnored var previewReplies: ((String, [String: Any]) -> String?)?
+    #endif
 
     /// `keepsReplies` keeps the last reply to each command that asks
     /// (`keeping`) for `keptReply` to read, on later launches too.
@@ -34,6 +39,22 @@ public final class CohesionClient {
         baseURL = URL(string: "https://\(host):\(pairing.port)")!
         kept = keepsReplies ? KeptReplies(server: pairing.serverFingerprint) : nil
     }
+
+    #if DEBUG
+    /// A client for `#Preview`s, connected to nothing: each command is
+    /// answered by `replies` (the JSON of its reply's `data`, or `nil` to
+    /// fail it), and the change socket counts as subscribed, so each screen
+    /// loads once.
+    public init(previewReplies replies: @escaping (_ type: String, _ args: [String: Any]) -> String?, vocabulary: Vocabulary = Vocabulary()) {
+        session = URLSession(configuration: .ephemeral)
+        baseURL = URL(string: "https://preview.invalid")!
+        kept = nil
+        previewReplies = replies
+        self.vocabulary = vocabulary
+        connection = .connected
+        changeSocket.isSubscribed = true
+    }
+    #endif
 
     deinit {
         session.invalidateAndCancel()
@@ -63,6 +84,11 @@ public final class CohesionClient {
     ) async throws -> Reply {
         var body: [String: Any] = ["type": type]
         body["args"] = args?.compactMapValues { $0 }
+        #if DEBUG
+        if let previewReplies {
+            return try previewReply(type, previewReplies(type, args?.compactMapValues { $0 } ?? [:]))
+        }
+        #endif
         return try await post(
             "command",
             body,
@@ -74,9 +100,31 @@ public final class CohesionClient {
     /// The reply `type` with `args` last had, from an earlier launch too, if
     /// it was kept; what a screen shows until it has the reply again.
     public func keptReply<Reply: Decodable>(_ type: String, _ args: [String: Any?]? = nil) -> Reply? {
+        #if DEBUG
+        if let previewReplies {
+            return try? previewReply(type, previewReplies(type, args?.compactMapValues { $0 } ?? [:]))
+        }
+        #endif
         guard let data = kept?.reply(for: KeptReplies.key(type, args)) else { return nil }
         return (try? JSONDecoder().decode(ReplyFrame<Reply>.self, from: data))?.ok?.data
     }
+
+    #if DEBUG
+    /// `json` decoded as `type`'s reply, failing as cohesiond would for a
+    /// command a preview doesn't answer.
+    private func previewReply<Reply: Decodable>(_ type: String, _ json: String?) throws -> Reply {
+        guard let json else {
+            print("Preview: no reply for \(type)")
+            throw ServerError(code: ServerError.notFound, message: "No preview reply for \(type).")
+        }
+        do {
+            return try JSONDecoder().decode(Reply.self, from: Data(json.utf8))
+        } catch {
+            print("Preview: \(type)'s reply doesn't decode: \(error)")
+            throw error
+        }
+    }
+    #endif
 
     /// Keeps a drawn diagram, starting over once there are 100 of them.
     func keep(_ rendered: RenderedMermaid, for key: RenderedMermaidKey) {

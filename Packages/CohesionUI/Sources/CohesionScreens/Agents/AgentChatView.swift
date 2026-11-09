@@ -901,16 +901,15 @@ private struct Source: Equatable {
 }
 
 /// The chat's header: the agent's avatar, to be raised into the navigation
-/// bar so it tops out level with the back button, its foot resting over the
-/// top of `HeaderPill`. Tapping either opens the agent's info.
+/// bar so it tops out level with the back button, just over `HeaderPill`. Tapping either opens the agent's info.
 private struct ChatHeader: View {
     let agent: Agent
     let showInfo: () -> Void
 
     var body: some View {
-        VStack(spacing: -5) {
+        VStack(spacing: 2) {
             Button(action: showInfo) {
-                AgentAvatar(agent: agent, diameter: 52)
+                AgentAvatar(agent: agent, diameter: 48)
             }
             .buttonStyle(.plain)
             // `HeaderPill` speaks for the header.
@@ -1558,15 +1557,18 @@ private struct ForkRow: View {
     let isRunning: Bool
     let open: () -> Void
 
+    @Environment(\.agentColor) private var agentColor
+
     private var stepCount: String {
         fork.steps.count == 1 ? "1 step" : "\(fork.steps.count) steps"
     }
 
     var body: some View {
         Button(action: open) {
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Image(systemName: "bolt.fill")
                     .imageScale(.small)
+                    .foregroundStyle(agentColor)
                     .accessibilityHidden(true)
                 Text(fork.title)
                     .lineLimit(1)
@@ -1582,9 +1584,13 @@ private struct ForkRow: View {
                     .imageScale(.small)
                     .accessibilityHidden(true)
             }
-            .font(.footnote)
+            .font(.subheadline)
             .foregroundStyle(.secondary)
-            .contentShape(quietLineTapArea)
+            // A row on a faint fill, as it opens a sheet of its own.
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.fill.quaternary, in: .rect(cornerRadius: 12))
+            .contentShape(.rect(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .hoverEffect(.highlight)
@@ -2003,7 +2009,7 @@ let bubbleInset: CGFloat = 48
 
 /// The widest an agent's chat or an actor session's transcript gets, with what
 /// floats at its foot, centred in anything wider.
-let conversationColumnWidth: CGFloat = 760
+let conversationColumnWidth: CGFloat = 680
 
 extension EnvironmentValues {
     /// The color of the agent whose conversation this is, which its

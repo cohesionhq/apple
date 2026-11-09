@@ -64,6 +64,25 @@ struct RootView: View {
     /// `presentsLinkedItems` to show over whatever is open.
     @State private var linkRequest: AppLink?
 
+    init() {}
+
+    #if DEBUG
+    /// For `#Preview`s: open on `tab`, with `agentPath` pushed on the
+    /// Intelligence tab and `workspacePath` on the Workspace tab's; beside the
+    /// sidebar, on `selection`.
+    init(
+        previewTab tab: RootTab = .dashboard,
+        agentPath: [AgentsRoute] = [],
+        workspacePath: [WorkspaceRoute] = [],
+        selection: SidebarItem? = nil
+    ) {
+        _tab = State(initialValue: tab)
+        _agentPath = State(initialValue: agentPath)
+        _workspacePath = State(initialValue: workspacePath)
+        _selection = State(initialValue: selection)
+    }
+    #endif
+
     var body: some View {
         @Bindable var window = window
 
@@ -286,10 +305,8 @@ struct RootView: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets())
                 }
-                // Under the list's 35pt above a first section, so the pins
-                // sit as far under the navigation bar as their names sit
-                // above the next section's title.
-                .listSectionMargins(.top, 30)
+                // Close under the large title, as Messages' pins sit.
+                .listSectionMargins(.top, 8)
             }
             AgentSections(
                 layout: .list,
@@ -308,10 +325,8 @@ struct RootView: View {
                 }
             }
         }
-        // Untitled, with the tab naming it, and inline so no empty large
-        // title sits over the list.
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        // Titled large, as the Feeds tab is.
+        .navigationTitle("Intelligence")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu("New", systemImage: "plus") {
@@ -738,7 +753,7 @@ struct SettingsButton: View {
             // An HStack rather than a label, which a toolbar draws as its
             // symbol alone.
             HStack {
-                Image(systemName: "gear")
+                Image(systemName: "gearshape")
                     .overlay(alignment: .topTrailing) { dot }
                 if showsTitle { Text("Settings") }
             }

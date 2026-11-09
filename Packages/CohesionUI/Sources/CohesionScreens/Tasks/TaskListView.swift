@@ -279,7 +279,7 @@ struct TaskListView: View {
             }
         } else {
             Section {
-                Button("Save as View…", systemImage: "square.stack.3d.up") { startNaming(.new) }
+                Button("Save as View…", systemImage: "bookmark") { startNaming(.new) }
             }
         }
     }

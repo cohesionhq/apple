@@ -1,4 +1,5 @@
 import CohesionCore
+import CohesionMarkdown
 import CohesionUI
 import SwiftUI
 
@@ -16,14 +17,16 @@ struct JournalListView: View {
 
     var body: some View {
         List {
-            entryLink(day: nil, title: "Today", preview: today?.contents)
-            ForEach(earlier) { entry in
-                if let day = entry.journalDate, let date = CalendarDay.date(day) {
-                    entryLink(
-                        day: day,
-                        title: date.formatted(.dateTime.weekday(.wide).month(.wide).day().year()),
-                        preview: entry.contents
-                    )
+            Section {
+                entryLink(day: nil, title: "Today", preview: today?.contents)
+            }
+            ForEach(months, id: \.month) { group in
+                Section(group.month.formatted(.dateTime.month(.wide).year())) {
+                    ForEach(group.entries) { entry in
+                        if let day = entry.journalDate, let date = CalendarDay.date(day) {
+                            entryLink(day: day, title: title(of: date), preview: entry.contents)
+                        }
+                    }
                 }
             }
         }
@@ -46,6 +49,31 @@ struct JournalListView: View {
             .sorted { ($0.journalDate ?? "") > ($1.journalDate ?? "") }
     }
 
+    /// The entries before today by the month they're in, newest first, as
+    /// the web's Journal heads its months.
+    private var months: [(month: Date, entries: [Document])] {
+        let calendar = Calendar.current
+        var months: [(month: Date, entries: [Document])] = []
+        for entry in earlier {
+            guard let day = entry.journalDate, let date = CalendarDay.date(day),
+                  let month = calendar.dateInterval(of: .month, for: date)?.start
+            else { continue }
+            if months.last?.month == month {
+                months[months.count - 1].entries.append(entry)
+            } else {
+                months.append((month, [entry]))
+            }
+        }
+        return months
+    }
+
+    /// A day's row title: "Yesterday", or its weekday and day, its month
+    /// being its section's.
+    private func title(of date: Date) -> String {
+        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
+        return date.formatted(.dateTime.weekday(.wide).day())
+    }
+
     /// A row that opens the entry for `day`, today's when nil, with its
     /// first line under the title.
     private func entryLink(day: String?, title: String, preview: String?) -> some View {
@@ -56,7 +84,7 @@ struct JournalListView: View {
         } label: {
             VStack(alignment: .leading) {
                 Text(title)
-                if let line = preview?.split(separator: "\n").first {
+                if let line = preview.flatMap(Markdown.previewLine) {
                     Text(line)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)

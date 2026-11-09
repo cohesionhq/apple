@@ -221,13 +221,11 @@ struct ActorPermissionCard: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(.fill.tertiary, in: .rect(cornerRadius: 8))
-                // A row wraps when its buttons don't fit, as "Allow for this
-                // session" beside three others won't on a phone.
-                ViewThatFits {
-                    HStack { decisionButtons }
-                    VStack(alignment: .trailing) { decisionButtons }
+                // Two equal columns, the allows over the denials, so four
+                // decisions read as one block rather than a ragged row.
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    decisionButtons
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .actorCard()
@@ -237,15 +235,24 @@ struct ActorPermissionCard: View {
     private var decisionButtons: some View {
         ForEach(request.decisions, id: \.self) { decision in
             if decision == .allow {
-                Button(label(of: decision)) { decide(decision) }
+                Button { decide(decision) } label: { decisionLabel(decision) }
                     .buttonStyle(.borderedProminent)
             } else {
-                Button(label(of: decision), role: decision == .abort ? .destructive : nil) { decide(decision) }
+                Button(role: decision == .abort ? .destructive : nil) { decide(decision) } label: { decisionLabel(decision) }
                     .buttonStyle(.bordered)
             }
         }
-        .controlSize(.small)
+        .buttonBorderShape(.capsule)
         .disabled(isSending)
+    }
+
+    /// A decision's words, filling its column.
+    private func decisionLabel(_ decision: ActorPermissionDecision) -> some View {
+        Text(label(of: decision))
+            .font(.subheadline.weight(.medium))
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .frame(maxWidth: .infinity)
     }
 
     private var title: String {
@@ -358,14 +365,12 @@ private struct CodeBlock: View {
 }
 
 extension View {
-    /// A request's card: a thin border on the leading edge.
+    /// A request's card, on an agent's cards' grey, so a question reads the
+    /// same in a chat and a transcript.
     fileprivate func actorCard() -> some View {
         padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.separator)
-            }
+            .background(Color.receivedBubble, in: .rect(cornerRadius: bubbleCornerRadius))
     }
 }
 

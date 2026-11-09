@@ -328,6 +328,23 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   text isn't selectable, since each selectable `Text` costs time on every
   frame of a scroll.
 
+## Previews
+
+`#Preview`s render real screens over canned replies, with no server: in DEBUG,
+`CohesionClient(previewReplies:vocabulary:)` answers each command from a
+closure and counts its change socket as subscribed, so a screen loads once.
+`PreviewData` (`CohesionCore`'s `Preview/`) is that closure: a believable
+workspace with stable ids (agents 1 to 6, Atlas first; actor sessions 1 to 5,
+the first needing the user; workspace 1, Studio), dated from now.
+`AppModel(previewClient:)`, `WindowModel.preview(app:)` and the helpers in
+`CohesionScreens`' `Previews/PreviewSupport.swift` put a screen in a window of
+it; `Previews/ScreenPreviews.swift` previews the sheets and pages, and
+`Cohesion/Previews/ShellPreviews.swift` the iOS shell, its tabs, pushes and
+the iPad's split view (`RootView(previewTab:agentPath:workspacePath:selection:)`).
+A package's preview can't read the app's asset catalog, so `PreviewWindow` tints
+with `Color.previewAccent`, `AccentColor`'s values. `design-review/` keeps the
+screenshots and reviews of each design round taken from these.
+
 ## Pushes and Live Activities
 
 iOS only; the Mac has none of this.

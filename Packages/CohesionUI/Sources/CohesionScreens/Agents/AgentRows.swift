@@ -361,7 +361,7 @@ public struct PinnedAgents<Actions: View>: View {
     }
 
     public var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 8) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 8) {
             ForEach(agents) { agent in
                 // A menu rather than a context menu, which a section header
                 // doesn't open. It covers the avatar, so it leads with the
@@ -411,7 +411,7 @@ public struct PinnedAgents<Actions: View>: View {
     @Environment(\.displayScale) private var displayScale
 
     /// How much of its column an avatar spans.
-    private static var span: CGFloat { 0.82 }
+    private static var span: CGFloat { 0.78 }
 }
 
 extension AgentAvatar {

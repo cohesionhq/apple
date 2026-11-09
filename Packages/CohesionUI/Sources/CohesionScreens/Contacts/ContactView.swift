@@ -127,7 +127,7 @@ struct ContactView: View {
     /// as the system's Contacts app lays them out.
     private var header: some View {
         VStack(spacing: 12) {
-            ContactPhotoView(photo: contact.photo, diameter: 96)
+            ContactPhotoView(photo: contact.photo, name: contact.fullName, diameter: 96)
             Text(contact.fullName)
                 .font(.title2)
                 .fontWeight(.semibold)
@@ -195,7 +195,8 @@ struct ContactView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(method.kind.label)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    // The grey of a label, not the button's tint.
+                    .foregroundStyle(Color.secondary)
                 Text(method.value)
                     .foregroundStyle(.tint)
             }

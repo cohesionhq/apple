@@ -2,10 +2,11 @@ import CohesionCore
 import CohesionUI
 import SwiftUI
 
-/// The Dashboard's recap, one section that's gone when there's nothing in it:
-/// the sessions that need the user, those finished or failed and still unread,
-/// every session working as chips, then the agents with unread messages, newest
-/// first. Each opens its session or chat.
+/// The Dashboard's recap, in the order to deal with it, as the web's: the
+/// sessions that need the user, those finished or failed and still unread,
+/// then the agents with unread messages, newest first; then the sessions still
+/// working, in a section of their own. Each row opens its session or chat, and
+/// a section with nothing in it is gone.
 struct WhatsNewSection: View {
     let agents: [Agent]
     /// Every actor's sessions not yet resolved, latest status change first.
@@ -32,19 +33,15 @@ struct WhatsNewSection: View {
     }
 
     var body: some View {
-        let needsYou = needsYou
-        let finishedUnread = finishedUnread
-        let working = working
+        let recap = needsYou + finishedUnread
         let unreadAgents = unreadAgents
-        if !(needsYou.isEmpty && finishedUnread.isEmpty && working.isEmpty && unreadAgents.isEmpty) {
+        let working = working
+        if !(recap.isEmpty && unreadAgents.isEmpty) {
             Section {
-                ForEach(needsYou + finishedUnread) { session in
+                ForEach(recap) { session in
                     LinkRow { openActorSession(session.id) } label: {
-                        ActorSidebarRow(session: session, isAttentionAmber: true)
+                        RecapSessionLabel(session: session)
                     }
-                }
-                if !working.isEmpty {
-                    WorkingChips(sessions: working, open: openActorSession)
                 }
                 ForEach(unreadAgents) { agent in
                     LinkRow { openAgent(agent.id) } label: {
@@ -52,14 +49,84 @@ struct WhatsNewSection: View {
                     }
                 }
             } header: {
-                Text("What’s New")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .textCase(nil)
-                    .accessibilityAddTraits(.isHeader)
+                DashboardSectionHeader(title: "What’s New", count: recap.count + unreadAgents.count)
+            }
+        }
+        if !working.isEmpty {
+            Section {
+                ForEach(working) { session in
+                    LinkRow { openActorSession(session.id) } label: {
+                        RecapSessionLabel(session: session)
+                    }
+                }
+            } header: {
+                DashboardSectionHeader(title: "Working", count: working.count)
             }
         }
     }
+}
+
+/// A Dashboard section's heading: its title and, after it, how many rows it
+/// has, as the web's sections carry their count.
+private struct DashboardSectionHeader: View {
+    let title: String
+    let count: Int
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(title)
+                .foregroundStyle(.primary)
+            Text(count, format: .number)
+                .foregroundStyle(.secondary)
+        }
+        .font(.title3.weight(.semibold))
+        .textCase(nil)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A session in the recap: its status's icon where a row's symbol goes, so
+/// its title starts where an agent's name does, over its status and how long
+/// ago it changed; amber while it needs the user, its title shimmering while
+/// it works.
+private struct RecapSessionLabel: View {
+    let session: ActorSession
+
+    @Environment(AppModel.self) private var model
+    /// An agent avatar's slot beside it.
+    @ScaledMetric(relativeTo: .body) private var slot = 28
+
+    var body: some View {
+        let status = model.vocabulary.label(of: session.status)
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.title)
+                    .lineLimit(1)
+                    .workingShimmer(session.status == .working, dimmed: 0.35)
+                TimelineView(.everyMinute) { _ in
+                    Text("\(status) · \(ago(session.statusChangedAt))")
+                        .font(.subheadline)
+                        .foregroundStyle(session.status.wordsStyle)
+                        .lineLimit(1)
+                }
+            }
+        } icon: {
+            ActorSessionStatusIcon(status: session.status)
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .frame(width: slot, height: slot)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(rowLabel(session, status: status))
+    }
+}
+
+/// How long ago `date` was, "now" under a minute or for a time just ahead on
+/// a clock that's off, where the format would say "in 0s".
+private func ago(_ date: Date) -> String {
+    guard Date.now.timeIntervalSince(date) >= 60 else { return "now" }
+    return date.formatted(.relative(presentation: .numeric, unitsStyle: .narrow))
 }
 
 /// A row that's one link, opening full-page content: all of it taps, with the
@@ -88,38 +155,6 @@ private struct LinkRow<Label: View>: View {
         .tint(.primary)
         #endif
         .padding(.vertical, 2)
-    }
-}
-
-/// Every session working at once, as chips that wrap onto as many lines as
-/// they need. Each has a button style of its own, or a tap in the row would
-/// press them all.
-private struct WorkingChips: View {
-    let sessions: [ActorSession]
-    let open: (Int) -> Void
-
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        FlowLayout(spacing: 8) {
-            ForEach(sessions) { session in
-                Button {
-                    open(session.id)
-                } label: {
-                    HStack(spacing: 4) {
-                        ActorSessionStatusIcon(status: session.status)
-                        Text(session.title)
-                            .lineLimit(1)
-                    }
-                    .font(.subheadline)
-                }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .tint(.primary)
-                .accessibilityLabel(rowLabel(session, status: model.vocabulary.label(of: session.status)))
-            }
-        }
-        .padding(.vertical, 4)
     }
 }
 
@@ -152,9 +187,6 @@ private struct UnreadAgentLabel: View {
 
     private var detail: String {
         guard let lastMessageAt = agent.lastMessageAt else { return "New message" }
-        // Under a minute is "now", as is a time just ahead on a clock that's
-        // off; the format would say "in 0s".
-        guard Date.now.timeIntervalSince(lastMessageAt) >= 60 else { return "New message · now" }
-        return "New message · \(lastMessageAt.formatted(.relative(presentation: .numeric, unitsStyle: .narrow)))"
+        return "New message · \(ago(lastMessageAt))"
     }
 }

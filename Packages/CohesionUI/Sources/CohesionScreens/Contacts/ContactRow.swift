@@ -2,13 +2,12 @@ import CohesionCore
 import CohesionUI
 import SwiftUI
 
-/// A contact's or the user's photo on a disc, or, without one, an empty
-/// disc with `name`'s initials or else a person glyph, half its diameter,
-/// as the web draws it, so names line up.
+/// A contact's or the user's photo on a disc, or, without one, `name`'s
+/// initials or else a person glyph, half its diameter, white on grey as the
+/// system's Contacts draws them, so names line up.
 struct ContactPhotoView: View {
     let photo: ContactPhoto
-    /// Drawn as initials when there is no photo; the contacts list leaves
-    /// it out, for the glyph.
+    /// Drawn as initials when there is no photo.
     var name: String?
     /// 40 spans a row's two lines of text.
     var diameter: CGFloat = 40
@@ -29,9 +28,9 @@ struct ContactPhotoView: View {
                             .font(.system(size: diameter * 0.5))
                     }
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.fill.tertiary)
+                .background(Color.gray.opacity(0.75).gradient)
             }
         }
         .frame(width: diameter, height: diameter)
@@ -56,7 +55,7 @@ struct ContactRow: View {
 
     var body: some View {
         HStack {
-            ContactPhotoView(photo: contact.photo)
+            ContactPhotoView(photo: contact.photo, name: contact.fullName)
             VStack(alignment: .leading) {
                 Text(contact.fullName)
                 if let first = contact.methods.first {

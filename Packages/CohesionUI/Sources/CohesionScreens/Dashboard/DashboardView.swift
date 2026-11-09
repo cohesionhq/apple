@@ -39,29 +39,33 @@ struct DashboardView: View {
     @State private var isLifted = false
     /// The whole page's fade under Reduce Motion, in place of the move.
     @State private var pageOpacity = 1.0
-    /// The greeting's size, a step above a large title, growing with it.
-    @ScaledMetric(relativeTo: .largeTitle) private var greetingSize = 40
 
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                Text(DashboardGreeting.line(hour: hour, name: profile?.name, pick: pick))
-                    .font(.system(size: greetingSize, weight: .semibold))
-                    .multilineTextAlignment(.center)
-                    // Keeps its lines while its row shrinks away under it.
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 56)
-                    .padding(.bottom, 28)
-                    // Lifted, the invisible greeting's row is the room over the
-                    // composer, which stays in its row and so keeps the keyboard.
-                    .frame(height: isLifted ? max(0, (pageHeight - composerHeight) / 2) : nil)
-                    .opacity(isLifted ? 0 : 1)
-                    .accessibilityAddTraits(.isHeader)
-                    .accessibilityHidden(isLifted)
-                    .listRowInsets(.vertical, isLifted ? 0 : nil)
-                    .modifier(BareRow())
-                    .id(pageTop)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(DashboardGreeting.line(hour: hour, name: profile?.name, pick: pick))
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                    // Read with the hour, so a page left open overnight moves on.
+                    Text(Date.now, format: .dateTime.weekday(.wide).month(.wide).day())
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .id(hour)
+                }
+                // Keeps its lines while its row shrinks away under it.
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 12)
+                .padding(.bottom, 12)
+                // Lifted, the invisible greeting's row is the room over the
+                // composer, which stays in its row and so keeps the keyboard.
+                .frame(height: isLifted ? max(0, (pageHeight - composerHeight) / 2) : nil)
+                .opacity(isLifted ? 0 : 1)
+                .accessibilityHidden(isLifted)
+                .listRowInsets(.vertical, isLifted ? 0 : nil)
+                .modifier(BareRow())
+                .id(pageTop)
                 DashboardComposer(isComposing: $isComposing, isPastOneLine: $isPastOneLine, quickJournal: { isAddingToJournal = true }) { agent in
                     notice = Toast(kind: .info, message: "Sent to \(agent.name).", link: AppLink.agent(agent.id).url)
                 }
@@ -71,7 +75,7 @@ struct DashboardView: View {
                     composerHeight = $0.height
                 }
                 #endif
-                .padding(.bottom, isLifted ? 0 : 40)
+                .padding(.bottom, isLifted ? 0 : 16)
                 .listRowInsets(.vertical, isLifted ? 0 : nil)
                 .modifier(BareRow())
                 // Gone rather than invisible, so nothing can tap or scroll to it.

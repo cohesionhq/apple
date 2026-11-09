@@ -36,14 +36,14 @@ struct TaskListMenu: ViewModifier {
                 Label(folder.title, systemImage: "folder").tag(WorkspacePage.tasks(.folder(folder.id)))
             }
             Section {
-                Label("All", systemImage: "tray.full").tag(WorkspacePage.tasks(.all))
+                Label("All", systemImage: "tray.2").tag(WorkspacePage.tasks(.all))
                 Label("Done", systemImage: "checkmark.circle").tag(WorkspacePage.tasks(.done))
                 Label("Cancelled", systemImage: "xmark.circle").tag(WorkspacePage.tasks(.cancelled))
             }
             if !window.savedViews.isEmpty {
                 Section {
                     ForEach(window.savedViews) { view in
-                        Label(view.name, systemImage: "square.stack.3d.up").tag(WorkspacePage.taskView(view.id))
+                        Label(view.name, systemImage: "bookmark").tag(WorkspacePage.taskView(view.id))
                     }
                 }
             }
@@ -66,7 +66,7 @@ struct EditSavedViewsView: View {
         NavigationStack {
             List {
                 ForEach(window.savedViews) { view in
-                    Label(view.name, systemImage: "square.stack.3d.up")
+                    Label(view.name, systemImage: "bookmark")
                 }
                 .onMove(perform: window.moveSavedViews)
             }

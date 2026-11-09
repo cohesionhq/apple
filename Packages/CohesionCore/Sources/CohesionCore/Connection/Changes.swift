@@ -208,6 +208,9 @@ extension CohesionClient {
         let listener = UUID()
         changeSocket.listeners[listener] = receive
         if changeSocket.isSubscribed { receive(nil) }
+        #if DEBUG
+        if previewReplies != nil { return listener }
+        #endif
         if changeSocket.task == nil, connection != .revoked {
             changeSocket.task = Task { await holdSocket() }
         }

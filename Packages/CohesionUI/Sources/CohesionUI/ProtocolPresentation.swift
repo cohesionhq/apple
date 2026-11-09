@@ -112,10 +112,10 @@ public extension ActorSessionStatus {
         }
     }
 
-    /// A session row's status words: amber while it needs the user where
-    /// `isAttentionAmber`, secondary otherwise.
-    func wordsStyle(isAttentionAmber: Bool) -> AnyShapeStyle {
-        isAttentionAmber && self == .needsAttention ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary)
+    /// A session row's status words: amber while it needs the user, as its
+    /// icon is, secondary otherwise.
+    var wordsStyle: AnyShapeStyle {
+        self == .needsAttention ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary)
     }
 }
 

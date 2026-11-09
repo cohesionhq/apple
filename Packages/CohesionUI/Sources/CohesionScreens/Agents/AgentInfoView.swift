@@ -26,6 +26,11 @@ struct AgentInfoView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    identity
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+                }
                 context
                 Section {
                     NavigationLink {
@@ -60,8 +65,13 @@ struct AgentInfoView: View {
                     }
                 }
             }
+            // Named in the header under the avatar; the bar's title is
+            // for VoiceOver and the window.
             .navigationTitle(agent.name)
             .navigationBarTitleDisplayMode(.inline)
+            #if os(iOS)
+            .toolbar(removing: .title)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm) { dismiss() }
@@ -80,6 +90,27 @@ struct AgentInfoView: View {
             }
             .errorAlert($error)
         }
+    }
+
+    /// The agent as its chat's header draws it, larger: its avatar over its
+    /// name and role, as the system's contact cards open.
+    private var identity: some View {
+        VStack(spacing: 8) {
+            AgentAvatar(agent: agent, diameter: 72)
+            Text(agent.name)
+                .font(.title2.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
+            if !agent.role.isEmpty {
+                Text(agent.role)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal)
+        .padding(.bottom, 4)
     }
 
     /// What the conversation's live thread held at its latest request: the

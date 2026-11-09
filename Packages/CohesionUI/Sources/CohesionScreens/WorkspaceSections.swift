@@ -309,21 +309,28 @@ private struct TaskSection<Link: Hashable, Pages: View>: View {
         #endif
     }
 
-    /// The inbox and folders, then every open task, those done and those
-    /// cancelled, then the saved views, as the web's Tasks page lists them.
+    /// The inbox and folders; then, as views of them, every open task, those
+    /// done and those cancelled, and the saved views, in a section of their
+    /// own that shows and hides with the first. The web's Tasks page lists
+    /// them in this order.
+    @ViewBuilder
     private var lists: some View {
         Section("Tasks", isExpanded: isExpanded) {
             row(.tasks(.inbox), "Inbox", systemImage: "tray")
             ForEach(folders) { folder in
                 row(.tasks(.folder(folder.id)), folder.title, systemImage: "folder")
             }
-            row(.tasks(.all), "All", systemImage: "tray.full")
-            row(.tasks(.done), "Done", systemImage: "checkmark.circle")
-            row(.tasks(.cancelled), "Cancelled", systemImage: "xmark.circle")
-            ForEach(savedViews) { view in
-                row(.taskView(view.id), view.name, systemImage: "square.stack.3d.up")
+        }
+        if isExpanded.wrappedValue {
+            Section("Views") {
+                row(.tasks(.all), "All", systemImage: "tray.2")
+                row(.tasks(.done), "Done", systemImage: "checkmark.circle")
+                row(.tasks(.cancelled), "Cancelled", systemImage: "xmark.circle")
+                ForEach(savedViews) { view in
+                    row(.taskView(view.id), view.name, systemImage: "bookmark")
+                }
+                .onMove(perform: moveSavedViews)
             }
-            .onMove(perform: moveSavedViews)
         }
     }
 

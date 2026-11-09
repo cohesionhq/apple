@@ -66,7 +66,16 @@ Say so in the report rather than claiming it was tested:
 - **Decoding**: compare a changed model against a real reply (see the
   `add-feature` skill) rather than assuming the shape.
 
-## 5. Optional: look at it in the simulator
+## 5. Optional: look at it in a preview
+
+For layout, prefer a `#Preview` over the simulator: the screens have previews
+over canned data (`ARCHITECTURE.md`, "Previews"), rendered with Xcode's
+`RenderPreview` tool. Use `displayMode: "interactive"` with a `snapshotDelay` of
+about 3 seconds, since a static render presents no sheet and finishes no load.
+A new screen gets a preview there, and a command it loads a reply in
+`PreviewData`.
+
+## 6. Optional: look at it in the simulator
 
 Use this when a screenshot helps, for example layout that shows without
 data. Pick a booted simulator from `xcrun simctl list devices booted`:

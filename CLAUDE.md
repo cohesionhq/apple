@@ -144,6 +144,7 @@ xcodebuild -scheme CohesionMac -destination 'platform=macOS' CODE_SIGNING_ALLOWE
 ```
 
 builds the Mac app. `verify-change` says what passing means.
-Simulator checks stay small: an end-state screenshot per affected device
-with `simctl`, and the `device-interaction` skill only when a change needs a tap to
-show; `verify-change` §5 has the rules.
+Look at layout in a `#Preview` first (`verify-change` §5). Simulator checks
+stay small: an end-state screenshot per affected device with `simctl`, and the
+`device-interaction` skill only when a change needs a tap to show;
+`verify-change` §6 has the rules.

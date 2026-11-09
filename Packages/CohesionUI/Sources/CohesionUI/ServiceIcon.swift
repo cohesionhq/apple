@@ -30,15 +30,17 @@ public struct ServiceIcon: View {
                     .resizable()
                     .scaledToFit()
             } else {
-                Text(name.prefix(1))
-                    .font(.system(size: size * 0.5, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                // A Settings row's tile, in grey, so it reads as an icon
+                // rather than a gap waiting for one.
+                Text(name.prefix(1).uppercased())
+                    .font(.system(size: size * 0.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.fill.tertiary)
+                    .background(Color.gray.gradient)
             }
         }
         .frame(width: size, height: size)
-        .clipShape(.rect(cornerRadius: size * 0.22))
+        .clipShape(.rect(cornerRadius: size * 0.23, style: .continuous))
         .accessibilityHidden(true)
         .task(id: icon) {
             image = await Self.load(icon, side: size, scale: displayScale)

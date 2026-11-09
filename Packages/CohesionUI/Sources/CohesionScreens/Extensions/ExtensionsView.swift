@@ -120,29 +120,33 @@ public struct ExtensionsView: View {
     }
 }
 
-/// An installed extension's icon, name and version over its description.
+/// An installed extension's icon, name and version over its description. A
+/// label, so the row's separator starts where its text does.
 private struct ExtensionRow: View {
     let extensionSummary: ExtensionSummary
 
+    @ScaledMetric(relativeTo: .body) private var iconSize = 32
+
     var body: some View {
-        HStack(spacing: 12) {
-            ServiceIcon(icon: extensionSummary.icon, name: extensionSummary.name, size: 32)
+        Label {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(extensionSummary.name)
                         .lineLimit(1)
-                    Text(extensionSummary.version, format: .number)
+                    Text("v\(extensionSummary.version.formatted())")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
                 if !extensionSummary.description.isEmpty {
                     Text(extensionSummary.description)
-                        .font(.footnote)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
+        } icon: {
+            ServiceIcon(icon: extensionSummary.icon, name: extensionSummary.name, size: iconSize)
         }
     }
 }

@@ -146,3 +146,16 @@ struct ShareToAgentView: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Share to Agent") {
+    Color.clear.sheet(isPresented: .constant(true)) {
+        ShareToAgentView(
+            client: CohesionClient(previewReplies: PreviewData.reply, vocabulary: PreviewData.vocabulary),
+            url: URL(string: "https://www.apple.com/newsroom/2026/06/liquid-glass-design/"),
+            onFinish: {},
+            onCancel: {}
+        )
+    }
+}
+#endif

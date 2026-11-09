@@ -52,6 +52,16 @@ public final class AppModel {
         restorePairing()
     }
 
+    #if DEBUG
+    /// An app for `#Preview`s, paired with `client` and on its workspaces as
+    /// listed, with nothing read from or saved to the device.
+    public init(previewClient client: CohesionClient) {
+        pairingObserver = nil
+        self.client = client
+        workspaces = client.keptWorkspaces() ?? []
+    }
+    #endif
+
     /// Reads the saved pairing unless there's a connection already, blocking
     /// for the keychain's answer, which never waits on the user. A launch
     /// before the device's first unlock can't read it, nor the user's

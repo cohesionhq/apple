@@ -54,12 +54,10 @@ struct ActorSessionStatusIcon: View {
 }
 
 /// An actor session in the lists of them: its title, which shimmers while it
-/// works, over its status as an icon and its name.
+/// works, over its status as an icon and its name, amber while it needs the
+/// user.
 struct ActorSidebarRow: View {
     let session: ActorSession
-    /// Whether a session needing the user has its status's words in amber
-    /// too, not only its icon.
-    var isAttentionAmber = false
 
     @Environment(AppModel.self) private var model
 
@@ -75,7 +73,7 @@ struct ActorSidebarRow: View {
                     .lineLimit(1)
             }
             .font(.subheadline)
-            .foregroundStyle(session.status.wordsStyle(isAttentionAmber: isAttentionAmber))
+            .foregroundStyle(session.status.wordsStyle)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(rowLabel(session, status: status))
