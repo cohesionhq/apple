@@ -234,10 +234,13 @@ An agent's chat reads as an actor session's transcript does, on every device:
   corners, an actor's questions and permissions as an agent's choices are.
   A permission waiting on the user is the page's background rather than the
   grey, with the amber raised hand by its title, an amber edge, and one first
-  choice: Allow, prominent, beside a glass Deny, with the other
-  decisions (for the session, or deny and stop) in a menu after them. The
-  decision, when it has no note, is a centred line with a shield, not the
-  user's bubble. Quiet
+  choice: Allow, prominent glass, beside a glass Deny, with the other
+  decisions (for the session, or deny and stop) in a menu after them. It
+  shows what's asked (the command, the files, the tool's input) and why, not
+  where it runs. Only Deny takes a note: tapping it swaps the decisions for
+  a "Why not?" field and a red Deny that sends it, or Cancel. The decision,
+  when it has no note, is a centred line with a shield, not the user's
+  bubble. Quiet
   lines stay quiet, on the leading edge the
   text starts from.
 - **A reaction** hangs off the bottom corner of a bubble or card, and sits

@@ -168,10 +168,11 @@ private struct OptionButton: View {
     }
 }
 
-/// Something an actor asks leave to do: the command and where it runs, the
-/// files and how each changes, or the tool and its input; why, in its
-/// words; and a button per decision it takes, with a note to send along.
-/// Once decided, the card is read-only and the decision follows it.
+/// Something an actor asks leave to do: the command, the files and how each
+/// changes, or the tool and its input; why, in its words; and a button per
+/// decision it takes. Deny asks for a note to send along (why, for the actor
+/// to act on) before it's sent; allowing needs none. Once decided, the card
+/// is read-only and the decision follows it.
 struct ActorPermissionCard: View {
     let requestID: Int
     let request: ActorPermissionRequest
@@ -180,6 +181,10 @@ struct ActorPermissionCard: View {
 
     @State private var note = ""
     @State private var isSending = false
+    /// Whether Deny was tapped, which swaps the decisions for the note and
+    /// a Deny that sends it.
+    @State private var isDenying = false
+    @FocusState private var isNoteFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -194,13 +199,8 @@ struct ActorPermissionCard: View {
                 }
             }
             switch request.subject {
-            case .command(let command, let cwd):
+            case .command(let command, _):
                 CodeBlock(text: command)
-                if let cwd {
-                    Text("in \(cwd)")
-                        .font(.footnote.monospaced())
-                        .foregroundStyle(.secondary)
-                }
             case .fileChange(let changes):
                 ForEach(Array(changes.enumerated()), id: \.offset) { _, change in
                     VStack(alignment: .leading, spacing: 4) {
@@ -225,14 +225,22 @@ struct ActorPermissionCard: View {
                     .foregroundStyle(.secondary)
             }
             if !isSettled {
-                TextField("Add a note (optional)", text: $note, axis: .vertical)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(.fill.tertiary, in: .rect(cornerRadius: 8))
-                // One clear first choice, Allow, beside a quiet Deny; the
-                // rest, for this session or stopping it, in a menu after them.
-                HStack(spacing: 8) {
-                    decisionButtons
+                if isDenying {
+                    TextField("Why not? (optional)", text: $note, axis: .vertical)
+                        .focused($isNoteFocused)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(.fill.tertiary, in: .rect(cornerRadius: 8))
+                        .onAppear { isNoteFocused = true }
+                    HStack(spacing: 8) {
+                        denyingButtons
+                    }
+                } else {
+                    // One clear first choice, Allow, beside a quiet Deny; the
+                    // rest, for this session or stopping it, in a menu after them.
+                    HStack(spacing: 8) {
+                        decisionButtons
+                    }
                 }
             }
         }
@@ -246,13 +254,17 @@ struct ActorPermissionCard: View {
         Group {
             if decisions.contains(.allow) {
                 Button { decide(.allow) } label: { decisionLabel(.allow) }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
             }
             if decisions.contains(.deny) {
-                // Glass, neutral: the accent is for the action that settles it,
-                // and a grey fill on the card would read as disabled.
-                Button { decide(.deny) } label: { decisionLabel(.deny) }
-                    .buttonStyle(.glass)
+                // Glass, neutral: the accent is for the action that settles it.
+                // It asks for the note first.
+                Button {
+                    withAnimation(.snappy) { isDenying = true }
+                } label: {
+                    decisionLabel(.deny)
+                }
+                .buttonStyle(.glass)
             }
             if !more.isEmpty {
                 Menu {
@@ -267,6 +279,29 @@ struct ActorPermissionCard: View {
                 .buttonStyle(.glass)
                 .accessibilityLabel("More Decisions")
             }
+        }
+        .buttonBorderShape(.capsule)
+        .controlSize(.large)
+        .disabled(isSending)
+    }
+
+    /// While denying: back to the decisions, or Deny, sending the note.
+    private var denyingButtons: some View {
+        Group {
+            Button {
+                withAnimation(.snappy) {
+                    isDenying = false
+                    note = ""
+                }
+            } label: {
+                Text("Cancel")
+                    .font(.subheadline.weight(.medium))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glass)
+            Button(role: .destructive) { decide(.deny) } label: { decisionLabel(.deny) }
+                .buttonStyle(.glassProminent)
+                .tint(.red)
         }
         .buttonBorderShape(.capsule)
         .controlSize(.large)
