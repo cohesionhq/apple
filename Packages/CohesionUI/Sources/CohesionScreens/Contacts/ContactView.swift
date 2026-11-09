@@ -128,9 +128,10 @@ struct ContactView: View {
     private var header: some View {
         VStack(spacing: 12) {
             ContactPhotoView(photo: contact.photo, name: contact.fullName, diameter: 96)
+            // As Contacts sets a card's name: the page's title, large.
             Text(contact.fullName)
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(.title)
+                .fontWeight(.bold)
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 8) {

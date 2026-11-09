@@ -481,6 +481,22 @@ nonisolated private struct Fixtures {
             FixtureTask(
                 id: 16, workspace: 2, folder: nil, title: "Call the plumber about the water heater",
                 priority: "high", size: 1, assignee: .contact(9), due: 1),
+            // An inbox as full as a real one, so its list reads at length.
+            FixtureTask(
+                id: 17, workspace: 1, folder: nil, title: "Read the Liquid Glass design notes",
+                priority: "none", size: 2, due: 2),
+            FixtureTask(
+                id: 18, workspace: 1, folder: nil, title: "Ask Priya for the investor update draft",
+                priority: "medium", assignee: .user, due: 1, tags: [2]),
+            FixtureTask(
+                id: 19, workspace: 1, folder: nil, title: "Expense the conference hotel",
+                priority: "low", size: 1),
+            FixtureTask(
+                id: 20, workspace: 1, folder: nil, title: "Try the new Xcode build cache",
+                priority: "none", size: 3, assignee: .agent(5)),
+            FixtureTask(
+                id: 21, workspace: 1, folder: nil, title: "Schedule the team retro",
+                priority: "medium", assignee: .user, due: 3),
         ]
     }
 

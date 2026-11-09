@@ -105,9 +105,11 @@ private struct RecapSessionLabel: View {
                     .lineLimit(2)
                     .workingShimmer(session.status == .working, dimmed: 0.35)
                 TimelineView(.everyMinute) { _ in
-                    Text("\(status) · \(ago(session.statusChangedAt))")
+                    // The status in its colour, when it was in grey, so the
+                    // colour lands on the word that carries the meaning.
+                    Text("\(Text(status).foregroundStyle(session.status.wordsStyle)) · \(ago(session.statusChangedAt))")
                         .font(.subheadline)
-                        .foregroundStyle(session.status.wordsStyle)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }

@@ -242,9 +242,11 @@ private struct AgentRow: View {
                 Text(agent.name)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
+                // Amber when it says it needs the user, as every "needs you"
+                // is; what a working agent is doing stays secondary.
                 Text(agent.activity ?? "Needs you")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(agent.activity == nil ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
                     .lineLimit(1)
             }
         }
