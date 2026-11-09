@@ -125,7 +125,7 @@ public struct ExtensionsView: View {
 }
 
 /// An installed extension's icon and name over its description, up to two
-/// lines, with its version at the trailing edge, clear of the name. A label,
+/// lines, with its version just after the name, so it reads as the name's. A label,
 /// so the row's separator starts where its text does.
 private struct ExtensionRow: View {
     let extensionSummary: ExtensionSummary
@@ -138,7 +138,6 @@ private struct ExtensionRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(extensionSummary.name)
                         .lineLimit(1)
-                    Spacer(minLength: 8)
                     Text("v\(extensionSummary.version.formatted())")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

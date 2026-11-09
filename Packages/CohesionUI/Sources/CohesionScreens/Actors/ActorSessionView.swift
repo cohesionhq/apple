@@ -220,8 +220,7 @@ public struct ActorSessionView: View {
         // A bar, so the transcript blurs out under the foot's glass.
         .safeAreaBar(edge: .bottom, spacing: 24) { foot(of: session) }
         // Text fades out under the bar and the foot, as the agent chat's does.
-        .scrollEdgeEffectStyle(.hard, for: .top)
-        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .scrollEdgeEffectStyle(.soft, for: .vertical)
         .sizedSheet(isPresented: $isComposing) { composer(of: session) }
     }
 

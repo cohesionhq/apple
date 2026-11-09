@@ -248,8 +248,9 @@ public struct AgentChatView: View {
                 .padding(.top, -53)
                 #endif
         }
-        // Hard, as Messages has it: the feed doesn't read through the header.
-        .scrollEdgeEffectStyle(.hard, for: .top)
+        // Soft, as Messages has it: the avatar and pill float over the feed,
+        // which blurs out under them, with no bar or line of their own.
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .navigationTitle(agent.name)
         .navigationBarTitleDisplayMode(.inline)
         #if os(iOS)

@@ -349,7 +349,7 @@ private struct TaskWidgetRow: View {
 
     /// A `Link`, or in a small widget, where one doesn't work, a button.
     @ViewBuilder
-    private func opensTask(@ViewBuilder _ label: () -> some View) -> some View {
+    private func opensTask(@ViewBuilder _ label: @escaping () -> some View) -> some View {
         if family == .systemSmall {
             Button(intent: OpenTaskIntent(taskID: task.id, workspaceID: task.workspaceID), label: label)
                 .buttonStyle(.plain)

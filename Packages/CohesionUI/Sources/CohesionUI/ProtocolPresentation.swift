@@ -206,10 +206,9 @@ public extension Vocabulary {
 public extension TaskPriority {
     static let flagSymbol = "flag.fill"
 
-    /// The flag's color: grey for low and medium, so the accent stays for
-    /// actions and what's unread, a yellow-orange for high (warmer than
-    /// grey, but clear of the amber that says "needs you") and red for
-    /// urgent; `nil` for no priority.
+    /// The flag's color, as the web tints it: grey for low, the accent for
+    /// medium, a yellow-orange for high (clear of the amber that says
+    /// "needs you") and red for urgent; `nil` for no priority.
     var tint: Color? {
         flagColor.map(Color.init)
     }
@@ -234,7 +233,7 @@ public extension TaskPriority {
         switch self {
         case .none: nil
         case .low: .tertiaryLabel
-        case .medium: .secondaryLabel
+        case .medium: UIColor(named: "AccentColor") ?? .tintColor
         case .high: UIColor { $0.userInterfaceStyle == .dark ? Self.highDark : Self.highLight }
         case .urgent: .systemRed
         }
@@ -244,7 +243,7 @@ public extension TaskPriority {
         switch self {
         case .none: nil
         case .low: .tertiaryLabelColor
-        case .medium: .secondaryLabelColor
+        case .medium: NSColor(named: "AccentColor") ?? .controlAccentColor
         case .high: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? Self.highDark : Self.highLight }
         case .urgent: .systemRed
         }

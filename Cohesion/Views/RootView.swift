@@ -806,14 +806,19 @@ struct SettingsButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "gearshape")
-                // Only when something's wrong: a dot on a healthy
-                // connection reads as a notification.
-                .overlay(alignment: .topTrailing) {
-                    if connection != .connected { dot }
-                }
+            // Titled, so it reads "Settings" in the overflow menu when the
+            // bar is too narrow for it; the bar shows the gear alone.
+            Label {
+                Text("Settings")
+            } icon: {
+                Image(systemName: "gearshape")
+                    // Only when something's wrong: a dot on a healthy
+                    // connection reads as a notification.
+                    .overlay(alignment: .topTrailing) {
+                        if connection != .connected { dot }
+                    }
+            }
         }
-        .accessibilityLabel("Settings")
         .accessibilityValue(connection.label)
     }
 

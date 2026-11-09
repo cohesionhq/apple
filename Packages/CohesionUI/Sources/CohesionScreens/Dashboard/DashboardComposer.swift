@@ -14,9 +14,6 @@ struct DashboardComposer: View {
     /// Whether the field has the focus, which the page takes away to close the
     /// keyboard.
     @FocusState.Binding var isComposing: Bool
-    /// Whether the message has wrapped past one line, which lifts the composer
-    /// on iOS.
-    @Binding var isPastOneLine: Bool
     let onSent: (Agent) -> Void
 
     @Environment(AppModel.self) private var model
@@ -36,8 +33,6 @@ struct DashboardComposer: View {
     /// Counts sends that landed, for the haptic.
     @State private var delivered = 0
     @State private var error: (any Error)?
-    /// One line's height at the current text size, to measure the field by.
-    @State private var lineHeight: CGFloat = 0
     @ScaledMetric(relativeTo: .subheadline) private var avatarDiameter = 20
 
     /// Pinned first, in their order, then the latest to talk, as the web
@@ -139,20 +134,6 @@ struct DashboardComposer: View {
                 }
                 .id(sends)
                 .accessibilityLabel("Message")
-                .background {
-                    Text(verbatim: "X")
-                        .lineLimit(1)
-                        .hidden()
-                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { lineHeight = $0 }
-                }
-                // Only a message's lines: the placeholder wraps at the largest
-                // text sizes.
-                .onGeometryChange(for: CGFloat.self, of: \.size.height) { height in
-                    isPastOneLine = !draft.isEmpty && height > lineHeight * 1.5
-                }
-                .onChange(of: draft.isEmpty) {
-                    if draft.isEmpty { isPastOneLine = false }
-                }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
                 .padding(.bottom, 6)

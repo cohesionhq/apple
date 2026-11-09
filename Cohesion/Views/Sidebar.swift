@@ -75,10 +75,13 @@ struct Sidebar: View {
         }
         .toolbar {
             // In the bar beside the overflow menu, as on the iPhone's tabs,
-            // rather than a bottom bar that floats over the last rows.
+            // rather than a bottom bar that floats over the last rows. The
+            // last to leave a narrow sidebar's bar, and then into the
+            // overflow menu beside Actor Usage.
             ToolbarItem(placement: .primaryAction) {
                 SettingsButton(action: showSettings)
             }
+            .visibilityPriority(.high)
             ActorUsageMenu(actors: actors, usage: actorUsage, show: showActorUsage)
         }
     }

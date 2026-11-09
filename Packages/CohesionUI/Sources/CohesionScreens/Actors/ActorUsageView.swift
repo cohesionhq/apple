@@ -104,9 +104,10 @@ struct ActorUsageView: View {
     }
 }
 
-/// The navigation bar's overflow menu where the agents and actors are
-/// listed, holding Actor Usage; only while some actor reports its plan,
-/// as the web shows Usage only then.
+/// Actor Usage in the navigation bar's overflow menu where the agents and
+/// actors are listed, the system's own, so whatever else overflows when the
+/// bar is narrow (Settings, in a narrow sidebar) joins it there; only while
+/// some actor reports its plan, as the web shows Usage only then.
 public struct ActorUsageMenu: ToolbarContent {
     let actors: [Actor]
     let usage: [ActorUsage]
@@ -120,11 +121,17 @@ public struct ActorUsageMenu: ToolbarContent {
 
     public var body: some ToolbarContent {
         if !usage.groups(of: actors).isEmpty {
+            #if os(iOS)
+            ToolbarOverflowMenu {
+                Button("Actor Usage", systemImage: "gauge.with.dots.needle.33percent", action: show)
+            }
+            #else
             ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
                     Button("Actor Usage", systemImage: "gauge.with.dots.needle.33percent", action: show)
                 }
             }
+            #endif
         }
     }
 }

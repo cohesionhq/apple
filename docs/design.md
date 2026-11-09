@@ -29,10 +29,12 @@ where this page says. Direction: the apps' surface and the goal's
   checkbox), a red filled cross once failed.
 - **Tasks**: on a regular width (iPad), a row ends in columns, as the web's
   rows do: the due day, the assignee, then the flag, lined up down the list.
-  A row's other details under its title are one line of plain grey
-  words, no capsules (on a phone, the due day and assignee lead it): the due day, the assignee, the size after a ruler (a
-  measure rather than a status), tags as `#tag`, and the list; a priority's flag is grey for low and medium, a yellow-orange for high
-  (clear of the amber that says "needs you") and red for urgent, so the accent stays for actions and what's unread. An open task's
+  A row's other details under its title are one line, as the web's meta
+  line (on a phone, the due day and assignee lead it): the due day, the
+  assignee, the size as a chip in its colour on a faint wash of it, tags as
+  quiet grey pills, and the list; a priority's flag is grey for low, the
+  accent for medium, a yellow-orange for high (clear of the amber that says
+  "needs you") and red for urgent, as the web tints them. An open task's
   due day reads "Today", "Tomorrow" or "Yesterday" near today, and is red once
   past, as Reminders marks it.
 - **Everything else** is the system's: `.primary`, `.secondary`, grouped
@@ -89,8 +91,10 @@ agents, then the actors), leaving out what the apps have no screen for:
   Feeds, a section that collapses and lists what the web's Articles page lists
   in its own column, with each
   section's collapse remembered across launches; the sidebar's navigation bar
-  has the same overflow menu with Actor Usage, and Settings beside it (a gear,
-  not a bar at the foot, which floats over the last rows), with
+  has the same overflow menu with Actor Usage (the system's `ToolbarOverflowMenu`),
+  and Settings beside it (a gear, not a bar at the foot, which floats over the
+  last rows; the last item to leave a narrow sidebar's bar, and then a titled
+  item in that overflow menu), with
   the connection's dot only while the connection isn't healthy, as on the
   iPhone's Settings button. The detail shows what's selected
   (`SidebarItem`), the Dashboard at launch and on switching workspace; Contacts opens the list, which pushes
@@ -152,18 +156,11 @@ end, as one bar. The two menus float above the sheet rather than on it, because
 interactive glass takes the touches meant for the part of an open menu that lies
 over it. Quick Journal is a `square.and.pencil` button in the bar. A tap
 anywhere in the composer outside its controls focuses the field. On iOS the
-keyboard closes with a tap on the page outside the composer, scrolling the page,
-or Done, a glass button in the page's bottom safe area with the chat composer's
-margins, there only while the composer has the focus.
+keyboard closes with a tap on the page outside the composer or by scrolling the
+page, which drags it down interactively; there's no Done button.
 
-On iOS, a message that wraps past one line makes the composer the focus of the page,
-while it has the focus: the greeting fades, What's New goes, and the composer moves
-to the middle of the room above the keyboard and Done, with `.snappy`. Back to one
-line, or closing the keyboard, restores the page. Under Reduce Motion nothing moves:
-the page fades out and back with the composer in its new place. The composer stays in
-its list row, so it keeps the keyboard, and the page still scrolls, for a composer
-taller than the room at large text sizes. What's New can run longer than any screen,
-so the page scrolls in the normal layout too.
+The composer stays in its place as a message grows, up to six lines; the page
+scrolls, as What's New can run longer than any screen.
 
 Quick Journal is a sheet that's paper to write on: a field with no border or
 background, and a tap anywhere on the sheet puts the cursor in it. Its `checkmark`

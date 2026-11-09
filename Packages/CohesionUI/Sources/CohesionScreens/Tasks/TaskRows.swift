@@ -330,16 +330,20 @@ private struct TaskRow: View {
                 let showsDue = due != nil && !isWide
                 let showsAssignee = assignee != nil && !isWide
                 if showsDue || showsAssignee || task.size != nil || list != nil || !tags.isEmpty {
-                    // One grammar: plain secondary words, each with at most a
-                    // small glyph, no capsules, so the title stays the row.
-                    FlowLayout(spacing: 10) {
+                    // As the web's meta line: grey words, the size's chip in
+                    // its colour, tags as quiet pills.
+                    FlowLayout(spacing: 8) {
                         if showsDue, let due { dueLabel(due) }
                         if showsAssignee, let assignee { assigneeLabel(assignee) }
                         if let size = task.size {
                             sizePill(size)
                         }
                         ForEach(tags) { tag in
-                            Text(verbatim: "#\(tag.name)")
+                            Text(tag.name)
+                                .font(.caption2.weight(.medium))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
+                                .background(.fill.tertiary, in: .capsule)
                                 .accessibilityLabel("Tag: \(tag.name)")
                         }
                         if let list {
@@ -436,15 +440,20 @@ private struct TaskRow: View {
         task.status == .incomplete && day < Calendar.current.startOfDay(for: .now)
     }
 
-    /// A size in grey words after a ruler: a measure, not a status, so it
-    /// takes none of the colours that say one.
+    /// The size as the web shows it: its colour on a faint wash of it.
     private func sizePill(_ size: TaskSize) -> some View {
         let label = model.vocabulary.label(of: size)
+        let tint = model.vocabulary.tint(of: size)
         return HStack(spacing: 3) {
             Image(systemName: "ruler")
                 .imageScale(.small)
             Text(label)
         }
+        .font(.caption2.weight(.medium))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 2)
+        .background(tint.opacity(0.15), in: .capsule)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Size: \(label)")
     }
