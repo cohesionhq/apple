@@ -9,7 +9,7 @@ struct AgentsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "Agents", provider: AgentsProvider()) { entry in
             AgentsWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(.background, for: .widget)
         }
         .configurationDisplayName("Agents")
         .description("The agents that need you.")
@@ -113,6 +113,7 @@ private struct SmallAgents: View {
                                         color: agent.color,
                                         diameter: proxy.size.width
                                     )
+                                    .facepileRing()
                                 }
                             }
                         }
@@ -207,6 +208,7 @@ private struct AgentsSpread: View {
             ForEach(agents.prefix(shown)) { agent in
                 Link(destination: AppLink.agent(agent.id).url) {
                     AgentAvatar(name: agent.name, emoji: agent.emoji, color: agent.color, diameter: diameter)
+                        .facepileRing()
                 }
                 .accessibilityLabel(agent.name)
             }
@@ -246,6 +248,14 @@ private struct AgentRow: View {
                     .lineLimit(1)
             }
         }
+    }
+}
+
+private extension View {
+    /// A ring of the widget's background around an avatar, so overlapping
+    /// ones read as discs one over the next rather than running together.
+    func facepileRing() -> some View {
+        background(Circle().fill(.background).padding(-3))
     }
 }
 

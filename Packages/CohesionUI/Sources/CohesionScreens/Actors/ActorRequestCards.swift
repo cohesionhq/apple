@@ -236,15 +236,7 @@ struct ActorPermissionCard: View {
                 }
             }
         }
-        .actorCard()
-        // Edged in the needs-you colour while it waits, so the one card that
-        // wants the user stands apart from the transcript's others.
-        .overlay {
-            if !isSettled {
-                RoundedRectangle(cornerRadius: bubbleCornerRadius)
-                    .strokeBorder(.orange.opacity(0.45), lineWidth: 1.5)
-            }
-        }
+        .actorCard(isWaiting: !isSettled)
     }
 
     @ViewBuilder
@@ -257,10 +249,10 @@ struct ActorPermissionCard: View {
                     .buttonStyle(.borderedProminent)
             }
             if decisions.contains(.deny) {
+                // Glass, neutral: the accent is for the action that settles it,
+                // and a grey fill on the card would read as disabled.
                 Button { decide(.deny) } label: { decisionLabel(.deny) }
-                    .buttonStyle(.bordered)
-                    // Neutral: the accent is for the action that settles it.
-                    .tint(.primary)
+                    .buttonStyle(.glass)
             }
             if !more.isEmpty {
                 Menu {
@@ -272,8 +264,7 @@ struct ActorPermissionCard: View {
                         .frame(minHeight: 20)
                 }
                 .menuStyle(.button)
-                .buttonStyle(.bordered)
-                .tint(.primary)
+                .buttonStyle(.glass)
                 .accessibilityLabel("More Decisions")
             }
         }
@@ -402,11 +393,19 @@ private struct CodeBlock: View {
 
 extension View {
     /// A request's card, on an agent's cards' grey, so a question reads the
-    /// same in a chat and a transcript.
-    fileprivate func actorCard() -> some View {
-        padding(12)
+    /// same in a chat and a transcript. One waiting on the user is the page's
+    /// own background edged in the needs-you colour instead, so the card that
+    /// wants the user stands apart rather than reading as grey and inert.
+    fileprivate func actorCard(isWaiting: Bool = false) -> some View {
+        let shape = RoundedRectangle(cornerRadius: bubbleCornerRadius)
+        return padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.receivedBubble, in: .rect(cornerRadius: bubbleCornerRadius))
+            .background(isWaiting ? AnyShapeStyle(.background) : AnyShapeStyle(Color.receivedBubble), in: shape)
+            .overlay {
+                if isWaiting {
+                    shape.strokeBorder(.orange.opacity(0.5), lineWidth: 1.5)
+                }
+            }
     }
 }
 

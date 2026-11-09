@@ -21,8 +21,9 @@ where this page says. Direction: the apps' surface and the goal's
   actor session needing attention, a reconnecting socket, an inactive
   extension, an article not fetched). Red for failed or revoked, green for
   connected.
-- **Tasks**: a size is grey words on a grey capsule, a measure rather than a
-  status; a priority's flag is grey for low and medium, orange for high and red
+- **Tasks**: a row's details under its title are one line of plain grey
+  words, no capsules: the due day, the assignee, the size after a ruler (a
+  measure rather than a status), tags as `#tag`, and the list; a priority's flag is grey for low and medium, orange for high and red
   for urgent, so the accent stays for actions and what's unread. An open task's
   due day reads "Today", "Tomorrow" or "Yesterday" near today, and is red once
   past, as Reminders marks it.
@@ -231,8 +232,9 @@ An agent's chat reads as an actor session's transcript does, on every device:
   `bubbleInset` short of the far edge, the transcript's fills the column.
 - **Cards stay cards**, one look in both: a received bubble's grey with its
   corners, an actor's questions and permissions as an agent's choices are.
-  A permission waiting on the user has the amber raised hand by its title, an
-  amber edge, and one first choice: Allow, prominent, beside a neutral Deny, with the other
+  A permission waiting on the user is the page's background rather than the
+  grey, with the amber raised hand by its title, an amber edge, and one first
+  choice: Allow, prominent, beside a glass Deny, with the other
   decisions (for the session, or deny and stop) in a menu after them. The
   decision, when it has no note, is a centred line with a shield, not the
   user's bubble. Quiet

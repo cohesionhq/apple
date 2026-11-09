@@ -11,7 +11,7 @@ struct TasksWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "Tasks", intent: TasksWidgetConfiguration.self, provider: TasksProvider()) { entry in
             TasksWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(.background, for: .widget)
         }
         .configurationDisplayName("Tasks")
         .description("The tasks in a view you pick, with a checkbox to complete each.")
@@ -465,7 +465,15 @@ private extension TaskItem {
          {"id":4,"workspace_id":1,"task_folder_id":null,"title":"Renew the certificate","description":"",
           "status":"incomplete","priority":"low","start_date":null,"due_date":null,"tag_ids":[]},
          {"id":5,"workspace_id":1,"task_folder_id":null,"title":"Plan the offsite","description":"",
-          "status":"incomplete","priority":"none","start_date":null,"due_date":null,"tag_ids":[]}]
+          "status":"incomplete","priority":"none","start_date":null,"due_date":null,"tag_ids":[]},
+         {"id":6,"workspace_id":1,"task_folder_id":null,"title":"Send the press kit","description":"",
+          "status":"incomplete","priority":"medium","start_date":null,"due_date":"2026-11-09","tag_ids":[]},
+         {"id":7,"workspace_id":1,"task_folder_id":null,"title":"Draft the launch post","description":"",
+          "status":"incomplete","priority":"none","start_date":null,"due_date":"2026-11-10","tag_ids":[]},
+         {"id":8,"workspace_id":1,"task_folder_id":null,"title":"Review the pricing page","description":"",
+          "status":"incomplete","priority":"low","start_date":null,"due_date":null,"tag_ids":[]},
+         {"id":9,"workspace_id":1,"task_folder_id":null,"title":"Record the demo video","description":"",
+          "status":"incomplete","priority":"high","start_date":null,"due_date":"2026-11-12","tag_ids":[]}]
         """#.utf8))
 }
 

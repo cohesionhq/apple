@@ -324,7 +324,9 @@ private struct TaskRow: View {
                     .foregroundStyle(task.status.titleStyle)
                 let due = task.dueDate.flatMap { CalendarDay.date($0) }
                 if due != nil || task.size != nil || assignee != nil || list != nil || !tags.isEmpty {
-                    FlowLayout(spacing: 6) {
+                    // One grammar: plain secondary words, each with at most a
+                    // small glyph, no capsules, so the title stays the row.
+                    FlowLayout(spacing: 10) {
                         if let due {
                             HStack(spacing: 3) {
                                 Image(systemName: "calendar")
@@ -347,17 +349,14 @@ private struct TaskRow: View {
                             sizePill(size)
                         }
                         ForEach(tags) { tag in
-                            Text(tag.name)
-                                .font(.caption2.weight(.medium))
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 2)
-                                .background(.fill.tertiary, in: .capsule)
+                            Text(verbatim: "#\(tag.name)")
+                                .accessibilityLabel("Tag: \(tag.name)")
                         }
                         if let list {
                             Text(list)
                         }
                     }
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 }
@@ -375,7 +374,6 @@ private struct TaskRow: View {
         }
     }
 
-    /// The size as the web shows it: its color on a faint wash of it.
     /// A due day in words near today ("Today", "Tomorrow", "Yesterday"),
     /// else its month and day.
     private static func dueWords(_ day: Date) -> String {
@@ -391,8 +389,8 @@ private struct TaskRow: View {
         task.status == .incomplete && day < Calendar.current.startOfDay(for: .now)
     }
 
-    /// A size as grey words on a grey capsule: a measure, not a status, so
-    /// it takes none of the colours that say one.
+    /// A size in grey words after a ruler: a measure, not a status, so it
+    /// takes none of the colours that say one.
     private func sizePill(_ size: TaskSize) -> some View {
         let label = model.vocabulary.label(of: size)
         return HStack(spacing: 3) {
@@ -400,11 +398,6 @@ private struct TaskRow: View {
                 .imageScale(.small)
             Text(label)
         }
-        .font(.caption2.weight(.medium))
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 2)
-        .background(.fill.tertiary, in: .capsule)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Size: \(label)")
     }
