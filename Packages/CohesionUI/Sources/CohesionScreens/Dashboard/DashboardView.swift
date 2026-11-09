@@ -3,7 +3,9 @@ import CohesionUI
 import SwiftUI
 
 /// Where a workspace opens, to recap and quickly dispatch: a greeting for the
-/// time of day, a message to an agent, Quick Journal, and what's new.
+/// time of day, a message to an agent, the tasks due, and what's new, as the
+/// web's Dashboard. Wide, as an iPad's pane is, what's new is a column beside
+/// the rest rather than under it.
 struct DashboardView: View {
     let workspaceID: Int
     let openAgent: (Int) -> Void
@@ -37,8 +39,15 @@ struct DashboardView: View {
     @State private var isLifted = false
     /// The whole page's fade under Reduce Motion, in place of the move.
     @State private var pageOpacity = 1.0
+    /// The pane's width, which decides one column or two.
+    @State private var pageWidth: CGFloat = 0
+
+    /// Whether the pane holds two columns side by side, each at a reading
+    /// width.
+    private var isTwoColumn: Bool { pageWidth >= 900 }
 
     var body: some View {
+        HStack(alignment: .top, spacing: 32) {
         ScrollViewReader { proxy in
             List {
                 VStack(alignment: .leading, spacing: 4) {
@@ -64,7 +73,7 @@ struct DashboardView: View {
                 .listRowInsets(.vertical, isLifted ? 0 : nil)
                 .modifier(BareRow())
                 .id(pageTop)
-                DashboardComposer(isComposing: $isComposing, isPastOneLine: $isPastOneLine, quickJournal: { isAddingToJournal = true }) { agent in
+                DashboardComposer(isComposing: $isComposing, isPastOneLine: $isPastOneLine) { agent in
                     notice = Toast(kind: .info, message: "Sent to \(agent.name).", link: AppLink.agent(agent.id).url)
                 }
                 #if os(iOS)
@@ -79,12 +88,8 @@ struct DashboardView: View {
                 .modifier(BareRow())
                 // Gone rather than invisible, so nothing can tap or scroll to it.
                 if !isLifted {
-                    WhatsNewSection(
-                        agents: window.agents,
-                        sessions: window.actorSessions,
-                        openAgent: openAgent,
-                        openActorSession: openActorSession
-                    )
+                    DashboardDueSection(workspaceID: workspaceID)
+                    if !isTwoColumn { whatsNew }
                 }
             }
             .listStyle(.plain)
@@ -93,8 +98,16 @@ struct DashboardView: View {
             .onChange(of: wantsLift) { moveComposer(proxy) }
             #endif
         }
-        // The list's own margins in a pane no wider than the column.
-        .centeredColumn()
+        if isTwoColumn {
+            List { whatsNew }
+                .listStyle(.plain)
+                .frame(maxWidth: 440)
+        }
+        }
+        // The list's own margins in a pane no wider than the column, or the
+        // two columns.
+        .centeredColumn(maxWidth: isTwoColumn ? 1120 : conversationColumnWidth)
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { pageWidth = $0 }
         #if os(iOS)
         // Inside the Done button's inset, so it's the room above that.
         .onGeometryChange(for: CGFloat.self, of: \.size.height) { pageHeight = $0 }
@@ -125,6 +138,13 @@ struct DashboardView: View {
         // The greeting heads the page; the title names the window.
         .toolbar(removing: .title)
         #endif
+        .toolbar {
+            // A toolbar button, as Notes and Journal start an entry, rather
+            // than a second control beside the composer.
+            ToolbarItem(placement: .primaryAction) {
+                Button("Quick Journal", systemImage: "square.and.pencil") { isAddingToJournal = true }
+            }
+        }
         .sizedSheet(isPresented: $isAddingToJournal) {
             QuickJournalSheet(workspaceID: workspaceID) {
                 journalAdds += 1
@@ -141,6 +161,15 @@ struct DashboardView: View {
     }
 
     /// A long message being written makes the composer the focus of the page.
+    private var whatsNew: some View {
+        WhatsNewSection(
+            agents: window.agents,
+            sessions: window.actorSessions,
+            openAgent: openAgent,
+            openActorSession: openActorSession
+        )
+    }
+
     private var wantsLift: Bool {
         isComposing && isPastOneLine
     }

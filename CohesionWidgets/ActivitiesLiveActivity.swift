@@ -135,8 +135,8 @@ private struct Counts: View {
     }
 }
 
-/// A thin bar split by the share of activities in each state, so it fills
-/// green as they finish.
+/// A thin bar split by the share of activities in each state, so it greys
+/// as they finish.
 private struct SegmentBar: View {
     let state: CohesionActivitiesAttributes.ContentState
 

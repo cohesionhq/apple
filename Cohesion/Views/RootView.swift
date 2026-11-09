@@ -262,8 +262,8 @@ struct RootView: View {
             case .contact(let id): ContactPage(contactID: id)
             }
         }
-        // Centred and inline, as every pushed screen's title is; the tab's
-        // first screen has the large one.
+        // Inline, as every pushed screen's title is; the tab's first screen
+        // has the large one.
         .navigationBarTitleDisplayMode(.inline)
     }
 

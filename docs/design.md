@@ -21,6 +21,11 @@ where this page says. Direction: the apps' surface and the goal's
   actor session needing attention, a reconnecting socket, an inactive
   extension, an article not fetched). Red for failed or revoked, green for
   connected.
+- **A session's or activity's state** is one mark and colour wherever it
+  shows, the app, the widgets and the Live Activity alike
+  (`ActorSessionStatus`, `ActivityStatus`): a dotted circle in the brand's
+  colour while working, the circled hand in amber when it needs the user, a
+  grey check once done, a red filled cross once failed.
 - **Tasks**: on a regular width (iPad), a row ends in columns, as the web's
   rows do: the due day, the assignee, then the flag, lined up down the list.
   A row's other details under its title are one line of plain grey
@@ -64,7 +69,8 @@ agents, then the actors), leaving out what the apps have no screen for:
   order is the iPad sidebar's to change. Every tab's first screen has a
   large title (the Dashboard's is its greeting) and Settings at the
   trailing edge with its other buttons (`tabRootToolbar`); every pushed
-  screen's title is inline and centred.
+  screen's title is inline (leading beside a list's buttons, as the system
+  sets it).
   - **A new screen joins one of these tabs**, never a fifth: a
     workspace page is a row in `WorkspaceSections` (so the iPad's sidebar
     gets it too), a feed screen is pushed from Feeds, an agent or actor
@@ -139,12 +145,12 @@ title's size, leading-aligned as a large title is, with the day under it in
 secondary text, as the web's Dashboard has it. The composer sits in the page under the greeting, not
 at the foot like the chat's: no keyboard comes up on opening it (the Mac's field
 takes focus, as its keyboard takes no room). It's one sheet of glass, and nothing
-on it has glass of its own: a borderless field, with attach and send at the
-trailing end. Attach floats above the sheet rather than on it, because interactive
-glass takes the touches meant for the part of an open menu that lies over it. Under
-the sheet, each with glass of its own, are the agent menu, leading, and Quick
-Journal…, trailing, which stack when they don't fit. A tap anywhere in the composer
-outside its controls, the gap under the sheet included, focuses the field. On iOS the
+on it has glass of its own: a borderless field over one row, the agent menu
+(avatar, name, chevrons) at its leading end and attach and send at its trailing
+end, as one bar. The two menus float above the sheet rather than on it, because
+interactive glass takes the touches meant for the part of an open menu that lies
+over it. Quick Journal is a `square.and.pencil` button in the bar. A tap
+anywhere in the composer outside its controls focuses the field. On iOS the
 keyboard closes with a tap on the page outside the composer, scrolling the page,
 or Done, a glass button in the page's bottom safe area with the chat composer's
 margins, there only while the composer has the focus.
@@ -163,6 +169,13 @@ background, and a tap anywhere on the sheet puts the cursor in it. Its `checkmar
 action, or ⌘Return, adds the note to today's entry as a paragraph of its own
 (`appendToJournal`, so what the entry holds is never replaced), and a toast
 confirms. A failure leaves the sheet open with the note and alerts.
+
+**Due** comes first under the composer, as the web's Dashboard has it: the
+workspace's open tasks due today or earlier, soonest first, each with its
+checkbox, which completes it there, and "Overdue" in red or "Today" at its end;
+a tap opens the task in a sheet. It's gone when nothing is due. On a pane 900
+points wide or more (an iPad's), What's New and Working are a column of their
+own beside the greeting, composer and Due, rather than under them.
 
 What's New is a native section, gone when empty, in this order: the sessions
 that need the user, their status's words amber as well as the icon (a failed

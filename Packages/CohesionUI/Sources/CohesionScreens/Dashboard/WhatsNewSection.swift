@@ -68,7 +68,7 @@ struct WhatsNewSection: View {
 
 /// A Dashboard section's heading: its title and, after it, how many rows it
 /// has, as the web's sections carry their count.
-private struct DashboardSectionHeader: View {
+struct DashboardSectionHeader: View {
     let title: String
     let count: Int
 

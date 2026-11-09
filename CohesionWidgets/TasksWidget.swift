@@ -265,7 +265,7 @@ private struct TasksList: View {
     private var header: some View {
         HStack(spacing: 6) {
             Image(systemName: listing.systemImage)
-                .foregroundStyle(Color.widgetAccent)
+                .foregroundStyle(Color.brand)
                 .widgetAccentable()
                 .accessibilityHidden(true)
             Text(listing.title)
@@ -432,7 +432,7 @@ private struct TaskCheckbox: ToggleStyle {
             } icon: {
                 Image(systemName: configuration.isOn ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(configuration.isOn ? Color.widgetAccent : .secondary)
+                    .foregroundStyle(configuration.isOn ? Color.brand : .secondary)
                     .widgetAccentable()
                     .contentShape(.circle)
             }

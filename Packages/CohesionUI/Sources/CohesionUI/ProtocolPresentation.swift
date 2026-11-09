@@ -106,16 +106,19 @@ public extension ActorSessionStatus {
     }
 
     /// The icon's color; `nil` where it takes its surroundings' color.
+    /// Working is the brand's, so the one live state reads as alive.
     var tint: Color? {
         switch self {
         case .needsAttention: .orange
+        case .working: .brand
         case .failed: .red
-        case .working, .idle, .resolved: nil
+        case .idle, .resolved: nil
         }
     }
 
     /// A session row's status words, in its icon's colour where it has one
-    /// (amber while it needs the user, red once failed), secondary otherwise.
+    /// (amber while it needs the user, the brand's while working, red once
+    /// failed), secondary otherwise.
     var wordsStyle: AnyShapeStyle {
         tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.secondary)
     }
@@ -133,36 +136,41 @@ public enum ActorUsageTone {
 
 // MARK: - Activities
 
-private extension Color {
-    /// The app's purple; `.accentColor` is the system's blue in a widget.
+public extension Color {
+    /// The app's purple, by name; `.accentColor` is the system's blue in a
+    /// widget.
     static let brand = Color("AccentColor")
 }
 
 public extension ActivityOverallStatus {
     /// What's in the ring once nothing is going.
     var ringSymbol: String {
-        self == .failed ? "exclamationmark" : "checkmark"
+        self == .failed ? "xmark" : "checkmark"
     }
 
+    /// As an actor session's status is drawn in the app: amber needs you,
+    /// the brand while working, red failed, grey done.
     var tint: Color {
         switch self {
         case .needsAttention: .orange
         case .running: .brand
         case .failed: .red
-        case .done: .green
+        case .done: .secondary
         }
     }
 }
 
 public extension ActivityStatus {
+    /// The same marks as an actor session's status (`ActorSessionStatus`),
+    /// so the Live Activity and the app say each state one way.
     var symbol: String {
         switch self {
-        case .running: "arrow.trianglehead.2.clockwise"
+        case .running: ActorSessionStatus.working.symbol
         case .waiting: "hourglass"
-        case .paused: "hand.raised.fill"
-        case .succeeded: "checkmark.circle.fill"
-        case .failed: "exclamationmark.triangle.fill"
-        case .cancelled: "stop.circle.fill"
+        case .paused: ActorSessionStatus.needsAttention.symbol
+        case .succeeded: ActorSessionStatus.idle.symbol
+        case .failed: ActorSessionStatus.failed.symbol
+        case .cancelled: "stop.circle"
         }
     }
 
@@ -171,7 +179,7 @@ public extension ActivityStatus {
         case .running: .brand
         case .waiting: .secondary
         case .paused: .orange
-        case .succeeded: .green
+        case .succeeded: .secondary
         case .failed: .red
         case .cancelled: .secondary
         }

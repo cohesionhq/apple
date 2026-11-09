@@ -4,8 +4,9 @@ import PhotosUI
 import SwiftUI
 
 /// The Dashboard's centrepiece, a message to an agent, on one sheet of glass:
-/// a borderless field over the chat's attach menu and send button. Under the
-/// sheet, a menu that picks who from every agent, and Quick Journal. The reply
+/// a borderless field over a row with who it goes to (a menu of every agent)
+/// at its leading edge and the chat's attach menu and send button at its
+/// trailing edge, as one bar, the chat composer's look. The reply
 /// waits in the agent's conversation, which `onSent`'s toast opens; a failed
 /// send puts everything back. Apart from the Dashboard so typing redraws only
 /// this.
@@ -16,8 +17,6 @@ struct DashboardComposer: View {
     /// Whether the message has wrapped past one line, which lifts the composer
     /// on iOS.
     @Binding var isPastOneLine: Bool
-    /// Opens the Quick Journal sheet.
-    let quickJournal: () -> Void
     let onSent: (Agent) -> Void
 
     @Environment(AppModel.self) private var model
@@ -68,18 +67,6 @@ struct DashboardComposer: View {
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
             }
-            // Side by side while they fit, stacked at large text sizes.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    if let agent { agentPicker(agent) }
-                    Spacer(minLength: 0)
-                    quickJournalButton
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    if let agent { agentPicker(agent) }
-                    quickJournalButton
-                }
-            }
         }
         .frame(maxWidth: .infinity)
         // With no border, the sheet around the field is the field too, and so
@@ -92,22 +79,6 @@ struct DashboardComposer: View {
         // A Mac's keyboard is always there, and takes no room to come up.
         .onAppear { isComposing = true }
         #endif
-    }
-
-    private var quickJournalButton: some View {
-        Button(action: quickJournal) {
-            // Built as the agent menu's label is; a titled Button under glass
-            // here drew its symbol alone.
-            HStack(spacing: 6) {
-                Image(systemName: "book.closed")
-                Text("Quick Journal…")
-                    .lineLimit(1)
-            }
-            .font(.subheadline)
-            .foregroundStyle(.primary)
-        }
-        .buttonStyle(.glass)
-        .fixedSize()
     }
 
     /// Who the message goes to: a menu of every agent, so it holds however
@@ -137,10 +108,15 @@ struct DashboardComposer: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
             }
-            .font(.subheadline)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .contentShape(.rect)
         }
+        // On the sheet's glass, so none of its own.
         .menuStyle(.button)
-        .buttonStyle(.glass)
+        .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .fixedSize()
         .accessibilityLabel("Agent")
@@ -181,6 +157,7 @@ struct DashboardComposer: View {
                 .padding(.top, 14)
                 .padding(.bottom, 6)
             HStack(spacing: 4) {
+                agentPicker(agent).hidden()
                 Spacer(minLength: 0)
                 attachMenu.hidden()
                 sendButton(to: agent)
@@ -190,11 +167,13 @@ struct DashboardComposer: View {
             .padding(.bottom, 8)
         }
         .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
-        // Above the glass rather than on it, in the place the row leaves for
-        // it: interactive glass here takes the touches meant for the part of
-        // the open menu that lies over it, so its items wouldn't run.
-        .overlay(alignment: .bottomTrailing) {
+        // The menus above the glass rather than on it, in the places the row
+        // leaves for them: interactive glass here takes the touches meant for
+        // the part of an open menu that lies over it, so its items wouldn't run.
+        .overlay(alignment: .bottom) {
             HStack(spacing: 4) {
+                agentPicker(agent)
+                Spacer(minLength: 0)
                 attachMenu
                 sendButton(to: agent).hidden()
             }
