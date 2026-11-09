@@ -129,10 +129,11 @@ private struct SmallAgents: View {
             } else {
                 Text(agents.count, format: .number)
                     .font(.largeTitle.weight(.semibold))
-                // Read on from the count: "3 need you", as the larger sizes say it.
+                // Read on from the count: "3 need you", as the larger sizes
+                // say it, in the amber every "needs you" is.
                 Text(agents.count == 1 ? agents[0].name : "need you")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(agents.count == 1 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
                     .lineLimit(1)
             }
         }
@@ -179,7 +180,7 @@ private struct AgentsSpread: View {
                     .font(.largeTitle.weight(.semibold))
                 Text(sentence)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.orange)
                     .lineLimit(2)
             }
             .accessibilityElement(children: .combine)

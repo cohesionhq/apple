@@ -21,10 +21,12 @@ where this page says. Direction: the apps' surface and the goal's
   actor session needing attention, a reconnecting socket, an inactive
   extension, an article not fetched). Red for failed or revoked, green for
   connected.
-- **Tasks**: a row's details under its title are one line of plain grey
-  words, no capsules: the due day, the assignee, the size after a ruler (a
-  measure rather than a status), tags as `#tag`, and the list; a priority's flag is grey for low and medium, orange for high and red
-  for urgent, so the accent stays for actions and what's unread. An open task's
+- **Tasks**: on a regular width (iPad), a row ends in columns, as the web's
+  rows do: the due day, the assignee, then the flag, lined up down the list.
+  A row's other details under its title are one line of plain grey
+  words, no capsules (on a phone, the due day and assignee lead it): the due day, the assignee, the size after a ruler (a
+  measure rather than a status), tags as `#tag`, and the list; a priority's flag is grey for low and medium, a yellow-orange for high
+  (clear of the amber that says "needs you") and red for urgent, so the accent stays for actions and what's unread. An open task's
   due day reads "Today", "Tomorrow" or "Yesterday" near today, and is red once
   past, as Reminders marks it.
 - **Everything else** is the system's: `.primary`, `.secondary`, grouped
@@ -49,15 +51,20 @@ agents, then the actors), leaving out what the apps have no screen for:
   which hides the tab bar; while some actor reports its plan, the
   navigation bar's overflow menu (`ellipsis`) holds Actor Usage, a sheet.
   Then, in the web's order, **Workspace**,
-  titled with the workspace's name, whose title menu picks another; its
+  titled large with the workspace's name, whose menu picks another (the name
+  and a chevron at the bar's leading edge, `titleMenu`, since the system's
+  large title draws no chevron for a title menu; Feeds' title is the same); its
   first screen is the sidebar's workspace part, the same
   `WorkspaceSections` without the Dashboard or feeds: Today, Journal, Documents,
   Contacts, then Tasks, then Connectors (the kinds of resource the workspace
   shows, then Edit…), each row pushing its page (`WorkspaceRoute`). And
-  **Feeds**, All Feeds and each feed with its unread count, then Add Feed
-  (the sidebar's `FeedSection`), pushing the feed's articles, which push
-  the reader. Settings is a button on each tab's first screen
-  (`tabRootToolbar`).
+  **Feeds**, which opens on the articles, as the web's Articles page does:
+  every feed's, titled All Feeds, or one feed's, picked from the title's
+  menu, which also adds a feed; an article pushes the reader. The feeds'
+  order is the iPad sidebar's to change. Every tab's first screen has a
+  large title (the Dashboard's is its greeting) and Settings at the
+  trailing edge with its other buttons (`tabRootToolbar`); every pushed
+  screen's title is inline and centred.
   - **A new screen joins one of these tabs**, never a fifth: a
     workspace page is a row in `WorkspaceSections` (so the iPad's sidebar
     gets it too), a feed screen is pushed from Feeds, an agent or actor

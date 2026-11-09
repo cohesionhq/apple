@@ -131,7 +131,9 @@ struct TaskListView: View {
                 }
             }
         }
-        .centeredColumn()
+        // Wider than a chat's column: a row's due day, assignee and flag
+        // have columns of their own here.
+        .centeredColumn(maxWidth: 960)
         .navigationTitle(title)
         .navigationSubtitle(isChanged ? "Edited" : "")
         .toolbar {

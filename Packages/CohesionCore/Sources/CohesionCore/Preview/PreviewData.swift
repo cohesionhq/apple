@@ -168,7 +168,7 @@ nonisolated private struct Fixtures {
         case "listContacts":
             return contacts.filter { ($0["workspace_id"] as? Int) == workspace }
         case "getProfile":
-            return ["name": "Jackson Zamorano", "photo": ["kind": "none"]]
+            return ["name": "Jackson", "photo": ["kind": "none"]]
 
         // Feeds and articles
         case "listFeeds":

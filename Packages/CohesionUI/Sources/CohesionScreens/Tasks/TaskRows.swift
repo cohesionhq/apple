@@ -292,7 +292,8 @@ struct TaskRows: View {
 
 /// A task's checkbox, title, and under it in one wrapping line when it is
 /// due, who it's assigned to, its size, its tags and the list it's in (for
-/// All), then a flag for any priority.
+/// All), then a flag for any priority. Wide, as on an iPad, the due day and
+/// the assignee move out of that line into columns before the flag.
 private struct TaskRow: View {
     let task: TaskItem
     let list: String?
@@ -301,9 +302,11 @@ private struct TaskRow: View {
     let toggle: () -> Void
 
     @Environment(AppModel.self) private var model
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
 
     private var isDone: Bool { task.status == .completed }
-
     var body: some View {
         HStack {
             Button(action: toggle) {
@@ -317,34 +320,21 @@ private struct TaskRow: View {
             .sensoryFeedback(.success, trigger: isDone) { _, isDone in isDone }
             .accessibilityLabel(isDone ? "Mark Incomplete" : "Mark Complete")
 
+            let due = task.dueDate.flatMap { CalendarDay.date($0) }
             VStack(alignment: .leading, spacing: 3) {
                 Text(task.title)
                     .multilineTextAlignment(.leading)
                     .strikethrough(task.status != .incomplete)
                     .foregroundStyle(task.status.titleStyle)
-                let due = task.dueDate.flatMap { CalendarDay.date($0) }
-                if due != nil || task.size != nil || assignee != nil || list != nil || !tags.isEmpty {
+                // Wide, the day and the assignee have columns of their own.
+                let showsDue = due != nil && !isWide
+                let showsAssignee = assignee != nil && !isWide
+                if showsDue || showsAssignee || task.size != nil || list != nil || !tags.isEmpty {
                     // One grammar: plain secondary words, each with at most a
                     // small glyph, no capsules, so the title stays the row.
                     FlowLayout(spacing: 10) {
-                        if let due {
-                            HStack(spacing: 3) {
-                                Image(systemName: "calendar")
-                                Text(Self.dueWords(due))
-                            }
-                            // Red once an open task's day has passed, as
-                            // Reminders marks it.
-                            .foregroundStyle(isOverdue(due) ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
-                            .accessibilityElement(children: .combine)
-                        }
-                        if let assignee {
-                            HStack(spacing: 4) {
-                                assignee.avatar(diameter: 16)
-                                Text(assignee.label)
-                            }
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("Assigned to \(assignee.label)")
-                        }
+                        if showsDue, let due { dueLabel(due) }
+                        if showsAssignee, let assignee { assigneeLabel(assignee) }
                         if let size = task.size {
                             sizePill(size)
                         }
@@ -365,13 +355,70 @@ private struct TaskRow: View {
 
             Spacer()
 
-            if let tint = task.priority.tint {
-                Image(systemName: TaskPriority.flagSymbol)
-                    .imageScale(.small)
-                    .foregroundStyle(tint)
-                    .accessibilityLabel(model.vocabulary.label(of: task.priority))
+            if isWide {
+                // Columns, as the web's rows end: when it's due, who has it,
+                // then the flag, each lined up down the list.
+                Group {
+                    if let due { dueLabel(due) } else { Color.clear }
+                }
+                .font(.subheadline)
+                .frame(width: 104, alignment: .leading)
+                Group {
+                    if let assignee { assigneeLabel(assignee) } else { Color.clear }
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(width: 150, alignment: .leading)
+            }
+
+            if isWide {
+                // A cell even when empty, so the columns before it hold still.
+                ZStack { flag }
+                    .frame(width: 20)
+            } else {
+                flag
             }
         }
+    }
+
+    /// Whether the row has the room for its columns, as an iPad's does.
+    private var isWide: Bool {
+        #if os(iOS)
+        sizeClass == .regular
+        #else
+        true
+        #endif
+    }
+
+    @ViewBuilder
+    private var flag: some View {
+        if let tint = task.priority.tint {
+            Image(systemName: TaskPriority.flagSymbol)
+                .imageScale(.small)
+                .foregroundStyle(tint)
+                .accessibilityLabel(model.vocabulary.label(of: task.priority))
+        }
+    }
+
+    /// When it's due: red once an open task's day has passed, as Reminders
+    /// marks it.
+    private func dueLabel(_ due: Date) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "calendar")
+            Text(Self.dueWords(due))
+        }
+        .foregroundStyle(isOverdue(due) ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func assigneeLabel(_ assignee: ShownAssignee) -> some View {
+        HStack(spacing: 4) {
+            assignee.avatar(diameter: 16)
+            Text(assignee.label)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Assigned to \(assignee.label)")
     }
 
     /// A due day in words near today ("Today", "Tomorrow", "Yesterday"),

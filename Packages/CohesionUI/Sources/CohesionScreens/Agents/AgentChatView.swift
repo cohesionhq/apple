@@ -1997,14 +1997,15 @@ let bubbleInset: CGFloat = 48
 let conversationColumnWidth: CGFloat = 680
 
 extension View {
-    /// Keeps a list's rows to `conversationColumnWidth`, centred in a wider
-    /// pane, as an iPad's detail is, so a row's trailing marks stay by its title.
-    func centeredColumn() -> some View {
-        modifier(CenteredColumn())
+    /// Keeps a list's rows to `maxWidth`, centred in a wider pane, as an
+    /// iPad's detail is, so a row's trailing marks stay by its title.
+    func centeredColumn(maxWidth: CGFloat = conversationColumnWidth) -> some View {
+        modifier(CenteredColumn(maxWidth: maxWidth))
     }
 }
 
 private struct CenteredColumn: ViewModifier {
+    let maxWidth: CGFloat
     @State private var width: CGFloat = 0
 
     func body(content: Content) -> some View {
@@ -2012,9 +2013,9 @@ private struct CenteredColumn: ViewModifier {
             #if os(iOS)
             // By the safe area: on iPad, the split view's leaves a leading content
             // margin no effect, which pushes the page off centre.
-            .safeAreaPadding(.horizontal, max(0, (width - conversationColumnWidth) / 2))
+            .safeAreaPadding(.horizontal, max(0, (width - maxWidth) / 2))
             #else
-            .contentMargins(.horizontal, width > conversationColumnWidth ? (width - conversationColumnWidth) / 2 : nil, for: .scrollContent)
+            .contentMargins(.horizontal, width > maxWidth ? (width - maxWidth) / 2 : nil, for: .scrollContent)
             #endif
             .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
     }

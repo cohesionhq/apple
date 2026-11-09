@@ -199,8 +199,9 @@ public extension TaskPriority {
     static let flagSymbol = "flag.fill"
 
     /// The flag's color: grey for low and medium, so the accent stays for
-    /// actions and what's unread, orange for high and red for urgent; `nil`
-    /// for no priority.
+    /// actions and what's unread, a yellow-orange for high (warmer than
+    /// grey, but clear of the amber that says "needs you") and red for
+    /// urgent; `nil` for no priority.
     var tint: Color? {
         flagColor.map(Color.init)
     }
@@ -226,7 +227,7 @@ public extension TaskPriority {
         case .none: nil
         case .low: .tertiaryLabel
         case .medium: .secondaryLabel
-        case .high: .systemOrange
+        case .high: UIColor { $0.userInterfaceStyle == .dark ? Self.highDark : Self.highLight }
         case .urgent: .systemRed
         }
     }
@@ -236,11 +237,21 @@ public extension TaskPriority {
         case .none: nil
         case .low: .tertiaryLabelColor
         case .medium: .secondaryLabelColor
-        case .high: .systemOrange
+        case .high: NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? Self.highDark : Self.highLight }
         case .urgent: .systemRed
         }
     }
     #endif
+
+    #if os(iOS)
+    private typealias PlatformColor = UIColor
+    #else
+    private typealias PlatformColor = NSColor
+    #endif
+
+    /// High's yellow-orange, deep enough to read on white, lifted in the dark.
+    private static let highLight = PlatformColor(displayP3Red: 0.85, green: 0.60, blue: 0.02, alpha: 1)
+    private static let highDark = PlatformColor(displayP3Red: 1.0, green: 0.78, blue: 0.24, alpha: 1)
 }
 
 // MARK: - Extensions

@@ -49,8 +49,9 @@ struct RootView: View {
     @State private var dashboardPath: [AgentsRoute] = []
     /// What the Workspace tab has open, on iPhone.
     @State private var workspacePath: [WorkspaceRoute] = []
-    /// The feed whose articles the Feeds tab shows, on iPhone.
-    @State private var feedPath: [ArticleListFilter] = []
+    /// Whose articles the Feeds tab opens on, on iPhone: every feed's, or
+    /// one's, picked from its title menu.
+    @State private var feedFilter: ArticleListFilter = .allFeeds
     /// The open conversation, on iPhone. Stored rather than derived for the
     /// stack, which a binding made afresh on each render unsettles under the
     /// open chat.
@@ -190,7 +191,7 @@ struct RootView: View {
         .windowSheets(
             window,
             openFeed: { id in
-                feedPath = [.feed(id)]
+                feedFilter = .feed(id)
                 selection = .page(.articles(.feed(id)))
             },
             openActorSession: open(sessionID:),
@@ -235,9 +236,8 @@ struct RootView: View {
                 }
             }
             Tab("Feeds", systemImage: "dot.radiowaves.up.forward", value: .feeds) {
-                NavigationStack(path: $feedPath) {
-                    feedList
-                        .navigationDestination(for: ArticleListFilter.self) { self.page(.articles($0)) }
+                NavigationStack {
+                    feedRoot
                 }
             }
         }
@@ -256,10 +256,15 @@ struct RootView: View {
 
     @ViewBuilder
     private func workspaceDestination(_ route: WorkspaceRoute) -> some View {
-        switch route {
-        case .page(let page): self.page(page)
-        case .contact(let id): ContactPage(contactID: id)
+        Group {
+            switch route {
+            case .page(let page): self.page(page)
+            case .contact(let id): ContactPage(contactID: id)
+            }
         }
+        // Centred and inline, as every pushed screen's title is; the tab's
+        // first screen has the large one.
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     /// The workspace's pages, as the iPad's sidebar leads with them.
@@ -283,13 +288,24 @@ struct RootView: View {
     }
 
     /// Every feed together, then each, as the iPad's sidebar lists them.
-    private var feedList: some View {
-        List {
-            FeedSection(feeds: window.feeds, moveFeeds: window.moveFeeds, addFeed: { window.isAddingFeed = true }) { $0 }
-        }
-        .navigationTitle("Feeds")
-        .tabRootToolbar(showsWorkspaces: false)
-        .refreshable { await window.load(.asked) }
+    /// The articles, as the web's Articles page opens on them: every feed's
+    /// newest first, or one feed's, picked from the title's menu, which also
+    /// adds a feed. The feeds' order is the iPad sidebar's to change.
+    private var feedRoot: some View {
+        page(.articles(feedFilter))
+            .id(feedFilter)
+            .titleMenu(window.title(of: feedFilter)) {
+                Picker("Feed", selection: $feedFilter) {
+                    Label("All Feeds", systemImage: "square.stack").tag(ArticleListFilter.allFeeds)
+                    ForEach(window.feeds) { feed in
+                        Text(feed.title).tag(ArticleListFilter.feed(feed.id))
+                    }
+                }
+                Section {
+                    Button("Add Feed…", systemImage: "plus") { window.isAddingFeed = true }
+                }
+            }
+            .tabRootToolbar(showsWorkspaces: false)
     }
 
     private var agentList: some View {
@@ -459,7 +475,7 @@ struct RootView: View {
             workspacePath = [.page(.contacts)] + contactPath.map(WorkspaceRoute.contact)
         case .page(.articles(let filter)):
             tab = .feeds
-            feedPath = [filter]
+            feedFilter = filter
         case .page(let page):
             tab = .workspace
             workspacePath = [.page(page)]
@@ -490,7 +506,7 @@ struct RootView: View {
                 contactPath = workspacePath.compactMap { if case .contact(let id) = $0 { id } else { nil } }
             case nil: selection = .page(.dashboard)
             }
-        case .feeds: selection = .page(.articles(feedPath.last ?? .allFeeds))
+        case .feeds: selection = .page(.articles(feedFilter))
         case .intelligence:
             switch agentPath.last {
             case .agent(let id): selection = .agent(id)
@@ -519,7 +535,7 @@ struct RootView: View {
                 case .contact(let id): window.contactName(id)
                 case nil: window.selectedWorkspace?.displayName ?? "Cohesion"
                 }
-            case .feeds: feedPath.last.map(window.title(of:)) ?? "Feeds"
+            case .feeds: window.title(of: feedFilter)
             case .intelligence:
                 switch agentPath.last {
                 case .agent(let id): window.agentName(id)
@@ -612,8 +628,8 @@ struct RootView: View {
     /// Closes what's open that the lists no longer hold: a deleted agent's
     /// conversation, contact, saved view or feed, and what's on top of them.
     private func closeWhatsGone() {
-        if case .feed(let id) = feedPath.first, !window.feeds.contains(where: { $0.id == id }) {
-            feedPath = []
+        if case .feed(let id) = feedFilter, !window.feeds.contains(where: { $0.id == id }) {
+            feedFilter = .allFeeds
         }
         switch window.lastTaskPage {
         case .tasks(.folder(let id)) where !window.folders.contains(where: { $0.id == id }),
@@ -694,6 +710,38 @@ private struct HidesTabBar: UIViewControllerRepresentable {
     }
 }
 
+extension View {
+    /// A large title that opens `menu`: its name in a large title's type and
+    /// a chevron, at the bar's leading edge, since the system's large title
+    /// draws no chevron for a title menu. The navigation title stays for the
+    /// back button and VoiceOver; the bar doesn't draw it.
+    func titleMenu(_ title: String, @ViewBuilder menu: @escaping () -> some View) -> some View {
+        // Inline, so the bar draws no large title under this one, then
+        // without the inline title either.
+        navigationBarTitleDisplayMode(.inline)
+            .toolbar(removing: .title)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu(content: menu) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(title)
+                                .font(.title.bold())
+                                .lineLimit(1)
+                            Image(systemName: "chevron.down")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .foregroundStyle(.primary)
+                        .fixedSize()
+                    }
+                    .accessibilityLabel(title)
+                    .accessibilityHint("Shows the menu")
+                }
+                .sharedBackgroundVisibility(.hidden)
+            }
+    }
+}
+
 extension EnvironmentValues {
     /// Whether the window shows settings, which any tab's first screen opens.
     @Entry var isShowingSettings: Binding<Bool>?
@@ -726,10 +774,9 @@ private struct TabRootToolbar: ViewModifier {
             if showsWorkspaces {
                 content
                     .navigationTitle(window.selectedWorkspace?.displayName ?? "Cohesion")
-                    // Inline, so the title shows the chevron that opens the
-                    // workspace menu.
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbarTitleMenu {
+                    // Large, as every tab's first screen is, with a chevron
+                    // that opens the workspace menu.
+                    .titleMenu(window.selectedWorkspace?.displayName ?? "Cohesion") {
                         Picker("Workspace", selection: $window.selectedWorkspaceID) {
                             ForEach(model.workspaces) { workspace in
                                 Text(workspace.displayName).tag(Optional(workspace.id))
@@ -741,7 +788,10 @@ private struct TabRootToolbar: ViewModifier {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            // At the trailing edge with the tab's other buttons, where an
+            // iOS app's account or settings button sits, not in the back
+            // button's place.
+            ToolbarItem(placement: .topBarTrailing) {
                 SettingsButton { isShowingSettings?.wrappedValue = true }
             }
         }
