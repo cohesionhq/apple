@@ -2,7 +2,7 @@
 
 Baseline through round 9 on the core set in `../CORE.txt` (iPhone, iPad
 landscape, the widgets and the Live Activity). Grok's round-8 review came
-back late and is beside it; its round-9 review was running at commit time.
+back late and is beside it; its round-9 review followed.
 
 ### Opus
 
@@ -34,14 +34,14 @@ back late and is beside it; its round-9 review was running at commit time.
 
 | Category | Base | R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Native | 6.4 | 6.4 | 6.3 | 6.7 | 6.3 | 7.5 | 7.0 | 7.3 | 7.3 | missing |
-| Typography | 5.8 | 6.1 | 6.0 | 6.2 | 5.8 | 6.5 | 6.4 | 6.2 | 6.6 | missing |
-| Hierarchy | 5.3 | 5.7 | 5.4 | 5.6 | 5.9 | 6.6 | 6.1 | 6.0 | 6.2 | missing |
-| Spacing & density | 5.2 | 5.4 | 5.5 | 5.9 | 5.4 | 6.4 | 5.9 | 5.8 | 6.5 | missing |
-| Color & contrast | 5.4 | 5.6 | 6.1 | 5.3 | 5.7 | 6.7 | 5.6 | 6.4 | 6.4 | missing |
-| Iconography | 6.5 | 6.0 | 6.4 | 6.2 | 6.4 | 6.8 | 6.3 | 7.0 | 6.6 | missing |
-| Consistency & polish | 4.7 | 4.9 | 4.6 | 5.0 | 5.0 | 6.1 | 5.5 | 5.7 | 6.0 | missing |
-| Overall | 5.5 | 5.5 | 5.5 | 5.7 | 5.6 | 6.5 | 6.0 | 6.3 | 6.4 | missing |
+| Native | 6.4 | 6.4 | 6.3 | 6.7 | 6.3 | 7.5 | 7.0 | 7.3 | 7.3 | 6.8 |
+| Typography | 5.8 | 6.1 | 6.0 | 6.2 | 5.8 | 6.5 | 6.4 | 6.2 | 6.6 | 6.3 |
+| Hierarchy | 5.3 | 5.7 | 5.4 | 5.6 | 5.9 | 6.6 | 6.1 | 6.0 | 6.2 | 5.7 |
+| Spacing & density | 5.2 | 5.4 | 5.5 | 5.9 | 5.4 | 6.4 | 5.9 | 5.8 | 6.5 | 5.5 |
+| Color & contrast | 5.4 | 5.6 | 6.1 | 5.3 | 5.7 | 6.7 | 5.6 | 6.4 | 6.4 | 5.3 |
+| Iconography | 6.5 | 6.0 | 6.4 | 6.2 | 6.4 | 6.8 | 6.3 | 7.0 | 6.6 | 6.5 |
+| Consistency & polish | 4.7 | 4.9 | 4.6 | 5.0 | 5.0 | 6.1 | 5.5 | 5.7 | 6.0 | 5.4 |
+| Overall | 5.5 | 5.5 | 5.5 | 5.7 | 5.6 | 6.5 | 6.0 | 6.3 | 6.4 | 5.9 |
 
 ## What changed in round 9, and why
 
