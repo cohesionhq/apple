@@ -215,8 +215,9 @@ struct RootView: View {
             Tab("Dashboard", systemImage: "rectangle.grid.1x2", value: .dashboard) {
                 NavigationStack(path: $dashboardPath) {
                     page(.dashboard)
-                        // Its greeting heads it; what it opens has a bar.
-                        .toolbar(.hidden, for: .navigationBar)
+                        // Its greeting heads it, under a bar with Settings
+                        // alone, as every tab's first screen has.
+                        .tabRootToolbar(showsWorkspaces: false)
                         .navigationDestination(for: AgentsRoute.self, destination: conversationDestination)
                 }
             }
@@ -664,6 +665,13 @@ private struct HidesTabBar: UIViewControllerRepresentable {
             setTabBarHidden(true)
         }
 
+        /// A screen shown at launch (restored, or a link) appears before
+        /// it's in the tab bar controller, so `viewWillAppear` finds none.
+        override func viewIsAppearing(_ animated: Bool) {
+            super.viewIsAppearing(animated)
+            if tabBarController?.isTabBarHidden == false { setTabBarHidden(true) }
+        }
+
         override func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
             setTabBarHidden(false)
@@ -741,26 +749,19 @@ private struct TabRootToolbar: ViewModifier {
 }
 
 /// Settings, with a dot that says how the connection to cohesiond stands.
-/// Titled at the iPad sidebar's foot.
 struct SettingsButton: View {
-    var showsTitle = false
     let action: () -> Void
 
     @Environment(AppModel.self) private var model
 
     var body: some View {
         Button(action: action) {
-            // An HStack rather than a label, which a toolbar draws as its
-            // symbol alone.
-            HStack {
-                Image(systemName: "gearshape")
-                    // Only when something's wrong: a dot on a healthy
-                    // connection reads as a notification.
-                    .overlay(alignment: .topTrailing) {
-                        if connection != .connected { dot }
-                    }
-                if showsTitle { Text("Settings") }
-            }
+            Image(systemName: "gearshape")
+                // Only when something's wrong: a dot on a healthy
+                // connection reads as a notification.
+                .overlay(alignment: .topTrailing) {
+                    if connection != .connected { dot }
+                }
         }
         .accessibilityLabel("Settings")
         .accessibilityValue(connection.label)

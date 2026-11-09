@@ -92,14 +92,15 @@ public extension AgentForwardedItem.Kind {
 
 public extension ActorSessionStatus {
     /// One family of circled marks: a dotted circle while it works, a raised
-    /// hand while it needs the user, a check once done, a cross once failed,
-    /// a filled check once resolved.
+    /// hand while it needs the user, a check once done, a filled cross once
+    /// failed, a filled check once resolved. The two that want the user are
+    /// filled, in their colour.
     var symbol: String {
         switch self {
         case .working: "circle.dotted"
         case .needsAttention: "hand.raised.circle.fill"
         case .idle: "checkmark.circle"
-        case .failed: "xmark.circle"
+        case .failed: "xmark.circle.fill"
         case .resolved: "checkmark.circle.fill"
         }
     }
@@ -113,10 +114,10 @@ public extension ActorSessionStatus {
         }
     }
 
-    /// A session row's status words: amber while it needs the user, as its
-    /// icon is, secondary otherwise.
+    /// A session row's status words, in its icon's colour where it has one
+    /// (amber while it needs the user, red once failed), secondary otherwise.
     var wordsStyle: AnyShapeStyle {
-        self == .needsAttention ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary)
+        tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.secondary)
     }
 }
 

@@ -109,7 +109,7 @@ public struct ActorSessionView: View {
                             .accessibilityLabel(session.title)
                         if let actor {
                             ActorPlace(actor: actor)
-                                .font(.caption)
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -219,7 +219,8 @@ public struct ActorSessionView: View {
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom, spacing: 24) { foot(of: session) }
         // Text fades out under the bar and the foot, as the agent chat's does.
-        .scrollEdgeEffectStyle(.soft, for: [.top, .bottom])
+        .scrollEdgeEffectStyle(.hard, for: .top)
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
         .sizedSheet(isPresented: $isComposing) { composer(of: session) }
     }
 
@@ -268,6 +269,13 @@ public struct ActorSessionView: View {
     @ViewBuilder
     private func item(_ message: ActorSessionMessage, in session: ActorSession) -> some View {
         switch message.content {
+        case .user(.permission(_, let decision, nil)):
+            // A decision with no note of the user's is the session's record,
+            // not something they said: a line across it, not their bubble.
+            Label(decisionWords(decision), systemImage: decision == .allow || decision == .allowForSession ? "checkmark.shield" : "xmark.shield")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
         case .user(let content):
             VStack(alignment: .trailing, spacing: 6) {
                 if message.attachmentCount > 0 {
@@ -743,6 +751,16 @@ private struct ActorText: View {
     }
 }
 
+/// A permission decision, as the transcript records it.
+private func decisionWords(_ decision: ActorPermissionDecision) -> String {
+    switch decision {
+    case .allow: "Allowed"
+    case .allowForSession: "Allowed for this session"
+    case .deny: "Denied"
+    case .abort: "Denied, and asked it to stop"
+    }
+}
+
 /// What the user said, as their bubble shows it.
 private func userText(_ content: ActorUserContent) -> String {
     switch content {
@@ -753,12 +771,7 @@ private func userText(_ content: ActorUserContent) -> String {
             .map { ($0.selected + [$0.other].compactMap(\.self)).joined(separator: ", ") }
             .joined(separator: "\n")
     case .permission(_, let decision, let message):
-        let decided = switch decision {
-        case .allow: "Allowed"
-        case .allowForSession: "Allowed for this session"
-        case .deny: "Denied"
-        case .abort: "Denied, and asked it to stop"
-        }
+        let decided = decisionWords(decision)
         return message.map { "\(decided): \($0)" } ?? "\(decided)."
     case .plan(_, let approved, let feedback):
         if approved { return "Approved the plan." }

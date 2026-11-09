@@ -6,7 +6,7 @@ import SwiftUI
 /// The iPad's sidebar: the workspace's pages (Dashboard, Today, Journal,
 /// Documents, Contacts) with one Tasks row after them, then the agents and the
 /// actor sessions, then the kinds of resource it shows and the feeds, each a
-/// section that collapses, with Settings at the foot. The workspace's name
+/// section that collapses, with Settings in its bar. The workspace's name
 /// heads it, and picks another.
 struct Sidebar: View {
     @Binding var selection: SidebarItem?
@@ -74,12 +74,12 @@ struct Sidebar: View {
             }
         }
         .toolbar {
-            ActorUsageMenu(actors: actors, usage: actorUsage, show: showActorUsage)
-            // At the foot's leading edge, as the web's sidebar ends.
-            ToolbarItem(placement: .bottomBar) {
-                SettingsButton(showsTitle: true, action: showSettings)
+            // In the bar beside the overflow menu, as on the iPhone's tabs,
+            // rather than a bottom bar that floats over the last rows.
+            ToolbarItem(placement: .primaryAction) {
+                SettingsButton(action: showSettings)
             }
-            ToolbarSpacer(.flexible, placement: .bottomBar)
+            ActorUsageMenu(actors: actors, usage: actorUsage, show: showActorUsage)
         }
     }
 }

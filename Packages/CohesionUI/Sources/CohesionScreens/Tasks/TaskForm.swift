@@ -28,7 +28,9 @@ struct TaskForm: View {
     var body: some View {
         Form {
             Section {
+                // The task's name heads the sheet, above what's said of it.
                 TextField("Title", text: $draft.title)
+                    .font(.title3.weight(.semibold))
                     .focused($isTitleFocused)
             }
             // Notes are Markdown: read rendered here, written in their own
@@ -46,13 +48,18 @@ struct TaskForm: View {
                     Picker("Status", selection: $draft.status) {
                         ForEach(TaskStatus.allCases) { Text($0.label).tag($0) }
                     }
+                    // A value in secondary, as Settings shows one, so the
+                    // accent stays on what acts.
+                    .tint(.secondary)
                 }
                 if showsAssignee {
                     AssigneePicker(selection: $draft.assignee, contacts: contacts)
+                        .tint(.secondary)
                 }
                 Picker("Priority", selection: $draft.priority) {
                     ForEach(model.vocabulary.taskPriorities, id: \.kind) { PriorityLabel(priority: $0).tag($0.kind) }
                 }
+                .tint(.secondary)
                 // A cohesiond older than sizes names none.
                 if model.vocabulary.taskSizes.count > 1 {
                     SizeSlider(size: $draft.size, sizes: model.vocabulary.taskSizes)
@@ -61,6 +68,7 @@ struct TaskForm: View {
                     Text("Inbox").tag(Int?.none)
                     ForEach(folders) { Text($0.title).tag(Optional($0.id)) }
                 }
+                .tint(.secondary)
                 if !tags.isEmpty {
                     NavigationLink {
                         TagPicker(selection: $draft.tagIDs, tags: tags)
@@ -169,14 +177,12 @@ private struct SizeSlider: View {
                 .accessibilityValue(label)
             }
         } else {
+            // One control, rather than "None" beside a button.
             LabeledContent("Size") {
-                HStack {
-                    Text("None")
-                    Button("Set Size") {
-                        withAnimation { size = sizes[sizes.count / 2].kind }
-                    }
-                    .buttonStyle(.borderless)
+                Button("Set Size") {
+                    withAnimation { size = sizes[sizes.count / 2].kind }
                 }
+                .buttonStyle(.borderless)
             }
         }
     }

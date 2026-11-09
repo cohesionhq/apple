@@ -23,8 +23,6 @@ struct DashboardView: View {
     /// Counts notes added to the journal, for the haptic.
     @State private var journalAdds = 0
     @State private var notice: Toast?
-    /// The pane's width, which centres the page in a wider one.
-    @State private var width: CGFloat = 0
     @FocusState private var isComposing: Bool
     /// Where the composer is on screen, for a tap outside it. Only the tap
     /// reads it, so scrolling doesn't redraw the page.
@@ -95,14 +93,7 @@ struct DashboardView: View {
             #endif
         }
         // The list's own margins in a pane no wider than the column.
-        #if os(iOS)
-        // By the safe area: on iPad, the split view's leaves a leading content
-        // margin no effect, which pushes the page off centre.
-        .safeAreaPadding(.horizontal, max(0, (width - conversationColumnWidth) / 2))
-        #else
-        .contentMargins(.horizontal, width > conversationColumnWidth ? (width - conversationColumnWidth) / 2 : nil, for: .scrollContent)
-        #endif
-        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
+        .centeredColumn()
         #if os(iOS)
         // Inside the Done button's inset, so it's the room above that.
         .onGeometryChange(for: CGFloat.self, of: \.size.height) { pageHeight = $0 }

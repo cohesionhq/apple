@@ -36,9 +36,9 @@ follow the order of the web's sidebar (the workspace's pages, then the
 agents, then the actors), leaving out what the apps have no screen for:
 
 - **iPhone (and a narrow iPad window)**: four tabs (`RootTab`).
-  **Dashboard** (`rectangle.grid.1x2`) comes first and is picked at launch: it
-  has no navigation bar, its greeting heading it, and pushes the chats and
-  sessions its rows open, so Settings is on the other tabs and the workspace menu on Workspace's.
+  **Dashboard** (`rectangle.grid.1x2`) comes first and is picked at launch:
+  its bar has no title, its greeting heading it, and Settings; it pushes the
+  chats and sessions its rows open. The workspace menu is on Workspace's.
   Then **Intelligence** (`sparkles.2`), titled large as Feeds is:
   it lists the pinned agents as a grid, four across, then the sidebar's one section without
   them (each team's, then those on no team, a row's team as its subline), which doesn't
@@ -56,7 +56,7 @@ agents, then the actors), leaving out what the apps have no screen for:
   **Feeds**, All Feeds and each feed with its unread count, then Add Feed
   (the sidebar's `FeedSection`), pushing the feed's articles, which push
   the reader. Settings is a button on each tab's first screen
-  (`tabRootToolbar`), but for the Dashboard's.
+  (`tabRootToolbar`).
   - **A new screen joins one of these tabs**, never a fifth: a
     workspace page is a row in `WorkspaceSections` (so the iPad's sidebar
     gets it too), a feed screen is pushed from Feeds, an agent or actor
@@ -74,7 +74,8 @@ agents, then the actors), leaving out what the apps have no screen for:
   Feeds, a section that collapses and lists what the web's Articles page lists
   in its own column, with each
   section's collapse remembered across launches; the sidebar's navigation bar
-  has the same overflow menu with Actor Usage. Settings is at the foot, with
+  has the same overflow menu with Actor Usage, and Settings beside it (a gear,
+  not a bar at the foot, which floats over the last rows), with
   the connection's dot only while the connection isn't healthy, as on the
   iPhone's Settings button. The detail shows what's selected
   (`SidebarItem`), the Dashboard at launch and on switching workspace; Contacts opens the list, which pushes
@@ -155,7 +156,8 @@ action, or ⌘Return, adds the note to today's entry as a paragraph of its own
 confirms. A failure leaves the sheet open with the note and alerts.
 
 What's New is a native section, gone when empty, in this order: the sessions
-that need the user, their status's words amber as well as the icon; those
+that need the user, their status's words amber as well as the icon (a failed
+one's red); those
 finished or failed and still unread; then agents with unread messages, newest
 first. Under it, **Working** lists every working session, its title
 shimmering. As the web's recap, the two are rows of one kind: a session's
@@ -228,9 +230,11 @@ An agent's chat reads as an actor session's transcript does, on every device:
   `bubbleInset` short of the far edge, the transcript's fills the column.
 - **Cards stay cards**, one look in both: a received bubble's grey with its
   corners, an actor's questions and permissions as an agent's choices are.
-  A permission waiting on the user has the amber raised hand by its title, and
-  one first choice: Allow, prominent, beside a neutral Deny, with the other
-  decisions (for the session, or deny and stop) in a menu after them. Quiet
+  A permission waiting on the user has the amber raised hand by its title, an
+  amber edge, and one first choice: Allow, prominent, beside a neutral Deny, with the other
+  decisions (for the session, or deny and stop) in a menu after them. The
+  decision, when it has no note, is a centred line with a shield, not the
+  user's bubble. Quiet
   lines stay quiet, on the leading edge the
   text starts from.
 - **A reaction** hangs off the bottom corner of a bubble or card, and sits
@@ -264,8 +268,8 @@ words it, or "Working…" when that's empty or hasn't come yet, as while a messa
 is on its way. New words fade in over the old on its one line, so nothing moves.
 No spinner, and no other motion beside it. What it says it's doing also stays in
 words where a row shows its status, but in a chat the caption is the one place
-that says it: while the agent works, the header's pill is its name alone, and
-its role comes back when the work stops. The name stays still; besides the
+that says it. The header's pill is the agent's name alone, its role being on
+the info sheet the pill opens. The name stays still; besides the
 caption, the only shimmer in a chat is on the row of a fork still running, which
 is in step with it, and that fork's sheet ends in the same caption. Under Reduce
 Motion the text is plain, with nothing in its place.

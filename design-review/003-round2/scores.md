@@ -4,7 +4,7 @@ Baseline, round 1 and round 2 on the core set in `../CORE.txt` (iPhone and
 iPad landscape, light mode), each reviewer on the same prompt
 (`../REVIEW-PROMPT.md`). Grok's round-1 review arrived after round 1 was
 committed and is now in `../002-round1/review-grok.md`. Grok's round-2 review
-had not returned when round 2 was committed; it's recorded as missing here.
+returned after round 2 was committed and is added with round 3.
 
 ### Opus
 
@@ -36,14 +36,14 @@ had not returned when round 2 was committed; it's recorded as missing here.
 
 | Category | Base | R1 | R2 |
 |---|---|---|---|
-| Native | 6.4 | 6.4 | missing |
-| Typography | 5.8 | 6.1 | missing |
-| Hierarchy | 5.3 | 5.7 | missing |
-| Spacing & density | 5.2 | 5.4 | missing |
-| Color & contrast | 5.4 | 5.6 | missing |
-| Iconography | 6.5 | 6.0 | missing |
-| Consistency & polish | 4.7 | 4.9 | missing |
-| Overall | 5.5 | 5.5 | missing |
+| Native | 6.4 | 6.4 | 6.3 |
+| Typography | 5.8 | 6.1 | 6.0 |
+| Hierarchy | 5.3 | 5.7 | 5.4 |
+| Spacing & density | 5.2 | 5.4 | 5.5 |
+| Color & contrast | 5.4 | 5.6 | 6.1 |
+| Iconography | 6.5 | 6.0 | 6.4 |
+| Consistency & polish | 4.7 | 4.9 | 4.6 |
+| Overall | 5.5 | 5.5 | 5.5 |
 
 ## What changed in round 2, and why
 

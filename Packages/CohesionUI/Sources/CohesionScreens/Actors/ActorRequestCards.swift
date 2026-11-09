@@ -198,7 +198,7 @@ struct ActorPermissionCard: View {
                 CodeBlock(text: command)
                 if let cwd {
                     Text("in \(cwd)")
-                        .font(.caption.monospaced())
+                        .font(.footnote.monospaced())
                         .foregroundStyle(.secondary)
                 }
             case .fileChange(let changes):
@@ -237,6 +237,14 @@ struct ActorPermissionCard: View {
             }
         }
         .actorCard()
+        // Edged in the needs-you colour while it waits, so the one card that
+        // wants the user stands apart from the transcript's others.
+        .overlay {
+            if !isSettled {
+                RoundedRectangle(cornerRadius: bubbleCornerRadius)
+                    .strokeBorder(.orange.opacity(0.45), lineWidth: 1.5)
+            }
+        }
     }
 
     @ViewBuilder

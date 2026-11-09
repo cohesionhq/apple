@@ -102,7 +102,7 @@ private struct RecapSessionLabel: View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.title)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .workingShimmer(session.status == .working, dimmed: 0.35)
                 TimelineView(.everyMinute) { _ in
                     Text("\(status) · \(ago(session.statusChangedAt))")

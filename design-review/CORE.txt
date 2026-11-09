@@ -17,3 +17,13 @@
 13b-ipad-agent-chat-light
 13c-ipad-tasks-light
 13d-ipad-actor-session-light
+50-widget-agents-small-light
+51-widget-agents-medium-light
+52-widget-agents-large-light
+53-widget-tasks-small-light
+54-widget-tasks-medium-light
+55-widget-tasks-large-light
+56-widget-tasks-extralarge-light
+57-live-activity-lockscreen-light
+58-live-activity-expanded-light
+59-live-activity-compact-light

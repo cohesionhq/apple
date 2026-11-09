@@ -279,16 +279,14 @@ public struct MarkdownText: View {
         }
     }
 
-    /// Gives code spans, which `Markdown.attributedContent` marks with the code intent, a subtle background,
-    /// and in an article the code block's size.
+    /// Gives code spans, which `Markdown.attributedContent` marks with the code intent, a subtle background
+    /// and the code block's size: the monospaced face at the body's size reads larger and darker than the words around it.
     private func shadingCode(in text: AttributedString) -> AttributedString {
         var shaded = text
         let codeRanges = text.runs.filter { $0.inlinePresentationIntent?.contains(.code) == true }.map(\.range)
         for range in codeRanges {
-            shaded[range].backgroundColor = Color.secondary.opacity(0.15)
-            if style == .article {
-                shaded[range].swiftUI.font = codeFont
-            }
+            shaded[range].backgroundColor = Color.secondary.opacity(0.12)
+            shaded[range].swiftUI.font = codeFont
         }
         return shaded
     }

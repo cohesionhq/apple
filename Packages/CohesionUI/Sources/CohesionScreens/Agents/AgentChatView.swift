@@ -246,7 +246,8 @@ public struct AgentChatView: View {
                 .padding(.top, -53)
                 #endif
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
+        // Hard, as Messages has it: the feed doesn't read through the header.
+        .scrollEdgeEffectStyle(.hard, for: .top)
         .navigationTitle(agent.name)
         .navigationBarTitleDisplayMode(.inline)
         #if os(iOS)
@@ -921,50 +922,31 @@ private struct ChatHeader: View {
     }
 }
 
-/// The foot of the chat's header: a glass pill with the agent's name and
-/// its role, under its avatar. While the agent works it's the name alone:
-/// the foot of the chat says what it's doing.
+/// The foot of the chat's header: a glass pill with the agent's name, under
+/// its avatar, as Messages draws a contact. Its role is on its info sheet,
+/// which a cut-off line here would only repeat.
 private struct HeaderPill: View {
     let agent: Agent
     let showInfo: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// What shows under the name, empty for nothing.
-    private var caption: String {
-        agent.isWorking ? "" : agent.role
-    }
-
     var body: some View {
         Button(action: showInfo) {
-            VStack(spacing: 0) {
-                HStack(spacing: 2) {
-                    Text(agent.name)
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.forward")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                if !caption.isEmpty {
-                    Text(caption)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        // A new role fades in over the old, rather than
-                        // morphing letter by letter.
-                        .contentTransition(.opacity)
-                }
+            HStack(spacing: 2) {
+                Text(agent.name)
+                    .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.forward")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
             .lineLimit(1)
             .padding(.horizontal, 12)
-            .padding(.vertical, 4)
+            .padding(.vertical, 6)
             .glassEffect(.regular.interactive(), in: .capsule)
             .frame(maxWidth: 220)
-            .animation(reduceMotion ? .easeOut(duration: 0.2) : .smooth, value: caption)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(agent.name)
-        .accessibilityValue(caption)
         .accessibilityHint("Shows the agent's info")
         .accessibilityAddTraits(.isButton)
     }
@@ -1297,7 +1279,7 @@ private struct ReplyCaption: View {
                 .fill(agentColor)
                 .frame(width: dotDiameter, height: dotDiameter)
             Text(title)
-                .font(.caption.weight(.medium))
+                .font(.footnote.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 // New words fade in over the old on the one line, so nothing
@@ -1318,7 +1300,7 @@ private struct TriggerView: View {
     var body: some View {
         RuleDivider {
             Label(text, systemImage: "bolt.fill")
-                .font(.caption)
+                .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -2008,8 +1990,33 @@ extension Color {
 let bubbleInset: CGFloat = 48
 
 /// The widest an agent's chat or an actor session's transcript gets, with what
-/// floats at its foot, centred in anything wider.
+/// floats at its foot, centred in anything wider. The Dashboard and a task
+/// list keep to it too (`centeredColumn()`).
 let conversationColumnWidth: CGFloat = 680
+
+extension View {
+    /// Keeps a list's rows to `conversationColumnWidth`, centred in a wider
+    /// pane, as an iPad's detail is, so a row's trailing marks stay by its title.
+    func centeredColumn() -> some View {
+        modifier(CenteredColumn())
+    }
+}
+
+private struct CenteredColumn: ViewModifier {
+    @State private var width: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            #if os(iOS)
+            // By the safe area: on iPad, the split view's leaves a leading content
+            // margin no effect, which pushes the page off centre.
+            .safeAreaPadding(.horizontal, max(0, (width - conversationColumnWidth) / 2))
+            #else
+            .contentMargins(.horizontal, width > conversationColumnWidth ? (width - conversationColumnWidth) / 2 : nil, for: .scrollContent)
+            #endif
+            .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
+    }
+}
 
 extension EnvironmentValues {
     /// The color of the agent whose conversation this is, which its

@@ -131,6 +131,7 @@ struct TaskListView: View {
                 }
             }
         }
+        .centeredColumn()
         .navigationTitle(title)
         .navigationSubtitle(isChanged ? "Edited" : "")
         .toolbar {

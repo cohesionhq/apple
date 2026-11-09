@@ -490,3 +490,9 @@ private extension TaskItem {
     TasksEntry(date: .now, state: .tasks(.sample))
     TasksEntry(date: .now, state: .viewGone)
 }
+
+#Preview("Extra Large", as: .systemExtraLarge) {
+    TasksWidget()
+} timeline: {
+    TasksEntry(date: .now, state: .tasks(.sample))
+}

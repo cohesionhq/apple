@@ -19,7 +19,9 @@ Review ONLY the core set of PNG screenshots in `<folder>`: the files named in
 `design-review/CORE.txt` (add `.png`); `INDEX.md` in the folder says what each
 shows. Don't take new screenshots and don't read the source code. Open and
 look at every one of those images. They are iPhone and iPad (landscape) in
-light mode; dark mode and Dynamic Type are out of scope for this pass.
+light mode, plus the home-screen widgets at each size and the Live Activity
+(files 50–59, where they exist); dark mode and Dynamic Type are out of scope
+for this pass.
 
 The maintainers are open to major shifts, not just polish: if a screen's
 layout, navigation or visual language should change substantially to feel

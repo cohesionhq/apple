@@ -221,9 +221,9 @@ struct WidgetMessage: View {
 #Preview("Small", as: .systemSmall) {
     AgentsWidget()
 } timeline: {
-    AgentsEntry.caughtUp
-    AgentsEntry.oneAgent
     AgentsEntry.threeAgents
+    AgentsEntry.oneAgent
+    AgentsEntry.caughtUp
     AgentsEntry.unpaired
     AgentsEntry.unreachable
 }
@@ -231,9 +231,9 @@ struct WidgetMessage: View {
 #Preview("Medium", as: .systemMedium) {
     AgentsWidget()
 } timeline: {
-    AgentsEntry.caughtUp
-    AgentsEntry.oneAgent
     AgentsEntry.threeAgents
+    AgentsEntry.oneAgent
+    AgentsEntry.caughtUp
     AgentsEntry.unpaired
     AgentsEntry.unreachable
 }
@@ -241,9 +241,9 @@ struct WidgetMessage: View {
 #Preview("Large", as: .systemLarge) {
     AgentsWidget()
 } timeline: {
-    AgentsEntry.caughtUp
-    AgentsEntry.oneAgent
     AgentsEntry.threeAgents
+    AgentsEntry.oneAgent
+    AgentsEntry.caughtUp
     AgentsEntry.unpaired
     AgentsEntry.unreachable
 }
