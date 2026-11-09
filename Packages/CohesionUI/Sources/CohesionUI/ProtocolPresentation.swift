@@ -92,14 +92,14 @@ public extension AgentForwardedItem.Kind {
 
 public extension ActorSessionStatus {
     /// One family of circled marks: a dotted circle while it works, a raised
-    /// hand while it needs the user, a check once done, a filled cross once
-    /// failed, a filled check once resolved. The two that want the user are
-    /// filled, in their colour.
+    /// hand while it needs the user, a filled check once done or resolved, a
+    /// filled cross once failed. Filled, so none reads as a checkbox beside
+    /// a task's.
     var symbol: String {
         switch self {
         case .working: "circle.dotted"
         case .needsAttention: "hand.raised.circle.fill"
-        case .idle: "checkmark.circle"
+        case .idle: "checkmark.circle.fill"
         case .failed: "xmark.circle.fill"
         case .resolved: "checkmark.circle.fill"
         }
@@ -112,7 +112,7 @@ public extension ActorSessionStatus {
         case .needsAttention: .orange
         case .working: .brand
         case .failed: .red
-        case .idle, .resolved: nil
+        case .idle, .resolved: .secondary
         }
     }
 

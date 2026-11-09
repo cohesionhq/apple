@@ -25,7 +25,8 @@ where this page says. Direction: the apps' surface and the goal's
   shows, the app, the widgets and the Live Activity alike
   (`ActorSessionStatus`, `ActivityStatus`): a dotted circle in the brand's
   colour while working, the circled hand in amber when it needs the user, a
-  grey check once done, a red filled cross once failed.
+  filled grey check once done (never an outline, which reads as a task's
+  checkbox), a red filled cross once failed.
 - **Tasks**: on a regular width (iPad), a row ends in columns, as the web's
   rows do: the due day, the assignee, then the flag, lined up down the list.
   A row's other details under its title are one line of plain grey

@@ -129,11 +129,10 @@ private struct SmallAgents: View {
             } else {
                 Text(agents.count, format: .number)
                     .font(.largeTitle.weight(.semibold))
-                // Read on from the count: "3 need you", as the larger sizes
-                // say it, in the amber every "needs you" is.
+                // Read on from the count: "3 need you", as the larger sizes say it.
                 Text(agents.count == 1 ? agents[0].name : "need you")
                     .font(.subheadline)
-                    .foregroundStyle(agents.count == 1 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
@@ -161,44 +160,29 @@ private struct CaughtUpMark: View {
 
 /// The small widget's look, given room: the agents' avatars overlapping,
 /// each a link to its chat and larger than the small's, then how many need
-/// the user beside who they are. A large widget adds a row per agent under
-/// them, saying what each is doing.
+/// the user beside who they are; a large widget the same, larger.
 private struct AgentsSpread: View {
     let agents: [Agent]
     let isLarge: Bool
 
-    /// The most avatars drawn; past it, a disc says how many more.
-    private var slots: Int { isLarge ? 5 : 4 }
+    /// The most avatars drawn, as many as span the width; past it, a disc
+    /// says how many more.
+    private var slots: Int { 4 }
     private var diameter: CGFloat { isLarge ? 96 : 56 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: isLarge ? 14 : 4) {
+        VStack(alignment: .leading, spacing: 4) {
             avatars
-            if !isLarge { Spacer(minLength: 0) }
+            Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(agents.count, format: .number)
-                    .font(.largeTitle.weight(.semibold))
+                    .font(isLarge ? .system(size: 56, weight: .semibold) : .largeTitle.weight(.semibold))
                 Text(sentence)
-                    .font(.subheadline)
-                    .foregroundStyle(.orange)
-                    .lineLimit(2)
+                    .font(isLarge ? .title3 : .subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(isLarge ? 3 : 2)
             }
             .accessibilityElement(children: .combine)
-            if isLarge {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(agents.prefix(3)) { agent in
-                        Link(destination: AppLink.agent(agent.id).url) {
-                            AgentRow(agent: agent, diameter: 32)
-                        }
-                    }
-                    if agents.count > 3 {
-                        Text("\(agents.count - 3) more")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -227,30 +211,6 @@ private struct AgentsSpread: View {
     private var sentence: String {
         let names = agents.map(\.name).formatted(.list(type: .and))
         return agents.count == 1 ? "\(names) needs you." : "\(names) need you."
-    }
-}
-
-/// The agent's avatar beside its name and what it is doing, or that it
-/// needs the user when it isn't working.
-private struct AgentRow: View {
-    let agent: Agent
-    var diameter: CGFloat = 32
-
-    var body: some View {
-        HStack(spacing: 10) {
-            AgentAvatar(name: agent.name, emoji: agent.emoji, color: agent.color, diameter: diameter)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(agent.name)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                // Amber when it says it needs the user, as every "needs you"
-                // is; what a working agent is doing stays secondary.
-                Text(agent.activity ?? "Needs you")
-                    .font(.caption)
-                    .foregroundStyle(agent.activity == nil ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
-                    .lineLimit(1)
-            }
-        }
     }
 }
 

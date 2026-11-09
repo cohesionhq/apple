@@ -1301,7 +1301,8 @@ private struct TriggerView: View {
 
     var body: some View {
         RuleDivider {
-            Label(text, systemImage: "bolt.fill")
+            // The alarm, as Cues is on the agent's sheet; the bolt is Runs.
+            Label(text, systemImage: "alarm")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

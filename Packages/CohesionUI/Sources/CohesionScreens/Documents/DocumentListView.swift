@@ -44,6 +44,7 @@ struct DocumentListView: View {
                             // A glyph, as Workspace's other lists' rows have.
                             LabeledContent {
                                 Text(document.modified, format: Self.modifiedStyle)
+                                    .font(.subheadline)
                             } label: {
                                 Label(document.title, systemImage: "doc.text")
                             }
