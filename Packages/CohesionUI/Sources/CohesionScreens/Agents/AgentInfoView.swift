@@ -115,19 +115,20 @@ struct AgentInfoView: View {
     }
 
     /// What the conversation's live thread held at its latest request: the
-    /// count over "tokens", as the web UI draws it, or a dash when there's
-    /// none to show. The count rolls to each new value as a turn works.
+    /// count and "tokens" on the one line, as a row's value is, or a dash
+    /// when there's none to show. The count rolls to each new value as a turn
+    /// works.
     private var context: some View {
         Section {
             LabeledContent("Context") {
-                VStack(alignment: .trailing, spacing: 0) {
+                HStack(spacing: 4) {
                     Text(contextTokens.map(tokenCount) ?? "—")
-                        .foregroundStyle(.secondary)
                         .contentTransition(.numericText(value: Double(contextTokens ?? 0)))
-                    Text("tokens")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                    if contextTokens != nil {
+                        Text("tokens")
+                    }
                 }
+                .foregroundStyle(.secondary)
                 .monospacedDigit()
             }
             .accessibilityElement(children: .ignore)

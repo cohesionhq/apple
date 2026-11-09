@@ -217,7 +217,8 @@ public struct ActorSessionView: View {
             follow(from: old, to: new)
         }
         .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom, spacing: 24) { foot(of: session) }
+        // A bar, so the transcript blurs out under the foot's glass.
+        .safeAreaBar(edge: .bottom, spacing: 24) { foot(of: session) }
         // Text fades out under the bar and the foot, as the agent chat's does.
         .scrollEdgeEffectStyle(.hard, for: .top)
         .scrollEdgeEffectStyle(.soft, for: .bottom)

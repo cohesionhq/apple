@@ -231,7 +231,9 @@ public struct AgentChatView: View {
         // is what flashed.
         .defaultScrollAnchor(.bottom)
         .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom) { composer }
+        // A bar rather than an inset, so the feed blurs out under the glass
+        // composer (the scroll edge effect) rather than reading through it.
+        .safeAreaBar(edge: .bottom) { composer }
         // The header, as Messages draws a contact: the avatar up in the
         // navigation bar over a pill just below it, in a bar of its own that
         // carries the bar's blur and the feed's top down past it. It lives

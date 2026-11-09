@@ -74,7 +74,13 @@ struct TaskForm: View {
                         TagPicker(selection: $draft.tagIDs, tags: tags)
                     } label: {
                         LabeledContent("Tags") {
-                            Text(tags.filter { draft.tagIDs.contains($0.id) }.map(\.name), format: .list(type: .and))
+                            let names = tags.filter { draft.tagIDs.contains($0.id) }.map(\.name)
+                            // A value whatever it holds, as the rows around it have.
+                            if names.isEmpty {
+                                Text("None")
+                            } else {
+                                Text(names, format: .list(type: .and))
+                            }
                         }
                     }
                 }
