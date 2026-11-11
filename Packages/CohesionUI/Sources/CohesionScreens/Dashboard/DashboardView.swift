@@ -81,8 +81,8 @@ struct DashboardView: View {
         #if os(iOS)
         // Beside the rows' own taps, which still open what they hold. The
         // composer's controls keep the keyboard up, as sending does.
-        .simultaneousGesture(SpatialTapGesture(coordinateSpace: .global).onEnded { tap in
-            if !composerFrame.contains(tap.location) { isComposing = false }
+        .gesture(TapAnywhere { location in
+            if !composerFrame.contains(location) { isComposing = false }
         })
         #endif
         .navigationTitle("Dashboard")
@@ -133,3 +133,39 @@ private struct BareRow: ViewModifier {
             .listRowBackground(Color.clear)
     }
 }
+
+#if os(iOS)
+/// A tap anywhere on a view, where in the window it landed, that leaves the
+/// tap to what's under it too. A SwiftUI tap gesture there, even a
+/// simultaneous one, cancels the touch for a list's rows, whose buttons then
+/// never fire.
+private struct TapAnywhere: UIGestureRecognizerRepresentable {
+    let tapped: (CGPoint) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UITapGestureRecognizer {
+        let recognizer = UITapGestureRecognizer()
+        recognizer.cancelsTouchesInView = false
+        recognizer.delegate = context.coordinator
+        return recognizer
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UITapGestureRecognizer, context: Context) {
+        guard recognizer.state == .ended else { return }
+        tapped(context.converter.location(in: .global))
+    }
+
+    /// Lets the tap recognize alongside the rows' and the scroll view's own.
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
+    }
+}
+#endif
