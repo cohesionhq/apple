@@ -720,6 +720,17 @@ extension CohesionClient {
         let _: JSONValue = try await call("removeAgentCue", ["cue_id": cue.id])
     }
 
+    /// The agent's agenda, in order, finished items included.
+    public func listAgenda(of agentID: Int) async throws -> [AgentAgendaItem] {
+        try await call("listAgentAgenda", ["agent_id": agentID])
+    }
+
+    /// Every skill, each agent's and each team's, by name;
+    /// `AgentSkill.of(_:in:)` picks one agent's.
+    public func listSkills() async throws -> [AgentSkill] {
+        try await call("listAgentSkills")
+    }
+
     /// The `limit` most recent runs, jobs and forks, newest first.
     public func listRuns(of agentID: Int, limit: Int = 50) async throws -> [AgentRun] {
         try await call("listAgentRuns", ["agent_id": agentID, "limit": limit])
@@ -745,8 +756,9 @@ extension CohesionClient {
         try await call("listAgentMessages", ["agent_id": agentID, "before": before, "limit": limit])
     }
 
-    /// Sends `message`, with `images` attached, forwarding `item` when
-    /// given (`message` is then its note, and may be empty). cohesiond saves
+    /// Sends `message`, with `images` attached, forwarding `item` or
+    /// running skill `skill` when given (`message` is then its note, and may
+    /// be empty; a message does one or the other). cohesiond saves
     /// it and answers at once: a turn the agent is running takes it in, or
     /// it queues the agent's turn on it; what the turn posts arrives with
     /// the agent's change pushes.
@@ -754,6 +766,7 @@ extension CohesionClient {
         _ message: String,
         images: [AttachmentUpload] = [],
         forwarding item: AgentForwardedItem? = nil,
+        running skill: AgentSkill? = nil,
         to agentID: Int,
         resendsIfDropped: Bool = true
     ) async throws {
@@ -763,10 +776,12 @@ extension CohesionClient {
             "message": message,
             "attachments": images.wireValue,
             "forward": item?.wireValue,
+            "skill": skill?.id,
         ], resendsIfDropped: resendsIfDropped)
     }
 
-    /// Sends `text` with `images`. A send whose connection dropped (a
+    /// Sends `text` with `images`, running `skill` when given, with `text` as
+    /// its note. A send whose connection dropped (a
     /// timeout, the app suspended) may still have been saved, which
     /// cohesiond keeps answering, so it counts as sent if the agent's
     /// messages since `lastID` hold it, and is sent again only if they
@@ -774,16 +789,19 @@ extension CohesionClient {
     public func deliver(
         _ text: String,
         images: [AttachmentUpload] = [],
+        running skill: AgentSkill? = nil,
         to agentID: Int,
         after lastID: Int
     ) async throws {
         do {
-            try await send(text, images: images, to: agentID, resendsIfDropped: false)
+            try await send(text, images: images, running: skill, to: agentID, resendsIfDropped: false)
         } catch let failure as URLError {
             guard let saved = try? await listMessages(of: agentID) else { throw failure }
-            if saved.contains(where: { $0.id > lastID && $0.sender == .user && $0.text == text }) { return }
+            if saved.contains(where: {
+                $0.id > lastID && $0.sender == .user && $0.typed == text && $0.skillName == skill?.name
+            }) { return }
             guard failure.code == .networkConnectionLost else { throw failure }
-            try await send(text, images: images, to: agentID, resendsIfDropped: false)
+            try await send(text, images: images, running: skill, to: agentID, resendsIfDropped: false)
         }
     }
 

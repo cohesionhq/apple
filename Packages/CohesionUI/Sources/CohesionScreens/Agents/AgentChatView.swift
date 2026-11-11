@@ -30,6 +30,9 @@ public struct AgentChatView: View {
     @Environment(WindowModel.self) private var window
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
 
     @State private var messages: [AgentMessage] = []
     @State private var draft = ""
@@ -40,6 +43,18 @@ public struct AgentChatView: View {
     @FocusState private var isComposing: Bool
     /// The images to send with `draft`.
     @State private var images: [AttachmentUpload] = []
+    /// The skill the message runs, picked after a `/`, with `draft` as its note.
+    @State private var skill: AgentSkill?
+    /// Every skill, each agent's and each team's; `nil` until they load, and
+    /// from a cohesiond without skills, which offers none.
+    @State private var skills: [AgentSkill]?
+    /// The agent's agenda, in order, finished items included, as of the last load.
+    @State private var agenda: [AgentAgendaItem] = []
+    /// Whether the agenda shows beside the chat where there's room, as it
+    /// does until it's closed.
+    @AppStorage("showsAgentAgenda") private var showsAgendaBeside = true
+    /// Whether the agenda's sheet is up on iPhone.
+    @State private var showsAgendaSheet = false
     @State private var attachPresentation = AttachPresentation()
     /// The message being sent, shown until its saved copy loads. Once
     /// cohesiond accepts it, the next load to finish clears it: that load
@@ -186,7 +201,7 @@ public struct AgentChatView: View {
                 if let reacted = layout.reactionLines[runs.shown.count] {
                     ReactionLines(messages: reacted) { reveal($0, proxy) }
                 }
-                if let pending, !delivered(pending.text, after: pendingAfter) {
+                if let pending, !delivered(pending, after: pendingAfter) {
                     VStack(alignment: .leading, spacing: 8) {
                         if layout.endsInRun {
                             RuleDivider()
@@ -194,6 +209,9 @@ public struct AgentChatView: View {
                         }
                         // Spaced as the saved copy that takes its place is.
                         VStack(alignment: .trailing, spacing: 4) {
+                            if let skill = pending.skill {
+                                SkillChip(name: skill.name, prompt: skill.prompt)
+                            }
                             if !pending.images.isEmpty {
                                 AttachedImages(images: pending.images, count: pending.images.count, reaction: nil)
                             }
@@ -260,6 +278,19 @@ public struct AgentChatView: View {
             AgentInfoView(agent: agent, onChange: onChange)
                 .zoomTransition(from: agent.id, in: header)
         }
+        .toolbar {
+            if !agenda.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Agenda", systemImage: AgentAgendaItem.agendaSymbol) {
+                        showsAgenda.wrappedValue.toggle()
+                    }
+                }
+            }
+        }
+        .inspector(isPresented: showsAgenda) {
+            AgentAgendaView(items: agenda)
+                .presentationDetents([.medium, .large])
+        }
         .sizedSheet(item: $viewedMemory) { viewed in
             MemorySheet(agent: agent, viewed: viewed)
         }
@@ -276,6 +307,7 @@ public struct AgentChatView: View {
             )
         }
         .task { await watch() }
+        .task { await watchSkills() }
         .onAppear { model.shownAgentIDs.append(agent.id) }
         .onDisappear {
             // Another window may show the same chat.
@@ -315,18 +347,79 @@ public struct AgentChatView: View {
         }
     }
 
+    /// Whether the agenda shows: beside the chat where there's room, until
+    /// it's closed, and in a sheet on iPhone when asked for. An empty agenda
+    /// never shows.
+    private var showsAgenda: Binding<Bool> {
+        Binding {
+            !agenda.isEmpty && (isCompact ? showsAgendaSheet : showsAgendaBeside)
+        } set: { shown in
+            if isCompact { showsAgendaSheet = shown } else { showsAgendaBeside = shown }
+        }
+    }
+
+    private var isCompact: Bool {
+        #if os(iOS)
+        sizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
+    /// The agent's skills, its own and its team's; `nil` when cohesiond
+    /// offers none.
+    private var agentSkills: [AgentSkill]? {
+        skills.map { AgentSkill.of(agent, in: $0) }
+    }
+
+    /// What follows a `/` opening the field on one line, which offers the
+    /// agent's skills, as the web's composer does; `nil` when it offers none.
+    private var skillQuery: String? {
+        guard agentSkills != nil, skill == nil, draft.hasPrefix("/"), !draft.contains("\n") else { return nil }
+        return String(draft.dropFirst())
+    }
+
+    /// The skills a `/` offers for `query`.
+    private func offeredSkills(for query: String) -> [AgentSkill] {
+        AgentSkill.matching(query, in: agentSkills ?? [])
+    }
+
+    /// Makes `picked` the message's skill, what was typed after the `/` gone.
+    private func pickSkill(_ picked: AgentSkill) {
+        withAnimation(arrival) { skill = picked }
+        draft = ""
+    }
+
     /// A floating glass field with the attach menu (paste, photos, and on
     /// iPad the chat's sketch) and the send button inside it, under the
-    /// images to send.
+    /// skill and images to send. A `/` opening the field offers the agent's
+    /// skills over it.
     private var composer: some View {
-        VStack(spacing: 0) {
-            if !images.isEmpty {
-                DraftImages(images: $images)
-                    .transition(.opacity)
+        VStack(spacing: 8) {
+            if let query = skillQuery {
+                SkillPicker(
+                    offered: offeredSkills(for: query),
+                    hasSkills: !(agentSkills ?? []).isEmpty,
+                    pick: pickSkill
+                )
+                .transition(.opacity)
             }
-            composerRow
+            VStack(alignment: .leading, spacing: 0) {
+                if let skill {
+                    SkillChip(name: skill.name, prompt: skill.prompt) {
+                        withAnimation(arrival) { self.skill = nil }
+                    }
+                    .padding([.horizontal, .top], 10)
+                    .transition(.opacity)
+                }
+                if !images.isEmpty {
+                    DraftImages(images: $images)
+                        .transition(.opacity)
+                }
+                composerRow
+            }
+            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
         }
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
         .frame(maxWidth: conversationColumnWidth)
         .padding(.horizontal)
         .padding(.bottom, 8)
@@ -354,11 +447,15 @@ public struct AgentChatView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
             .padding(5)
-            TextField("Message \(agent.name)", text: $draft, axis: .vertical)
+            TextField(skill == nil ? "Message \(agent.name)" : "Add a note", text: $draft, axis: .vertical)
                 .lineLimit(1...6)
                 .focused($isComposing)
                 .onSubmit {
-                    if canSend { send() }
+                    if let query = skillQuery, let first = offeredSkills(for: query).first {
+                        pickSkill(first)
+                    } else if canSend {
+                        send()
+                    }
                 }
                 .id(sends)
                 .padding(.vertical, 11)
@@ -393,11 +490,12 @@ public struct AgentChatView: View {
 
     private var showsStop: Bool {
         isTurnRunning && pending == nil && draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && images.isEmpty
+            && images.isEmpty && skill == nil
     }
 
     private var canSend: Bool {
-        pending == nil && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty)
+        pending == nil
+            && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty || skill != nil)
     }
 
     /// `message`'s reaction, or the one sent for it that hasn't loaded back.
@@ -429,6 +527,16 @@ public struct AgentChatView: View {
         }
     }
 
+    /// Loads every skill, for the `/` in the composer, and again whenever
+    /// cohesiond reports they changed. A cohesiond without skills refuses
+    /// the list, and the composer offers none.
+    private func watchSkills() async {
+        guard let client = model.client else { return }
+        for await _ in client.changes(matching: { $0 == .agentSkills }) {
+            if let loaded = try? await client.listSkills() { skills = loaded }
+        }
+    }
+
     /// The messages a load fetches at least, and an earlier page holds.
     private static let page = 100
     /// How many of its latest runs a load reads for the ones going on.
@@ -445,6 +553,8 @@ public struct AgentChatView: View {
         let limit = max(Self.page, messages.count)
         do {
             async let current = client.agent(agent.id)
+            // A cohesiond without agendas refuses the list: none shows.
+            async let currentAgenda = try? client.listAgenda(of: agent.id)
             let loaded = try await retrying(while: { load > applied }) {
                 try await client.listMessages(of: agent.id, limit: limit)
             }
@@ -465,7 +575,7 @@ public struct AgentChatView: View {
                 // The saved copy of a message being sent keeps the photos already
                 // on screen rather than fetching them again.
                 if let pending, !pending.images.isEmpty,
-                   let saved = feed.last(where: { $0.id > pendingAfter && $0.sender == .user && $0.text == pending.text }) {
+                   let saved = feed.last(where: { $0.id > pendingAfter && pending.isSaved(as: $0) }) {
                     attachments[saved.id] = attachments[saved.id] ?? pending.images
                 }
                 // Only a load with messages to rise in animates: a row inserted
@@ -478,7 +588,11 @@ public struct AgentChatView: View {
             if let sentAfter = pending?.sentAfter, load > sentAfter { pending = nil }
             fetchAttachments(of: feed)
             let shown = try await current
+            let loadedAgenda = await currentAgenda
             guard load == applied else { return }
+            if let loadedAgenda, loadedAgenda != agenda {
+                withAnimation(arrival) { agenda = loadedAgenda }
+            }
             let isTurnRunning = shown.foregroundStarted != nil
             if shown.isWorking != (activity != nil) || isTurnRunning != self.isTurnRunning {
                 withAnimation(arrival) {
@@ -589,19 +703,21 @@ public struct AgentChatView: View {
         guard let client = model.client else { return }
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let uploads = images
+        let skill = skill
         draft = ""
+        withAnimation(arrival) { self.skill = nil }
         // The new field takes the focus once it's in, so the keyboard stays up.
         sends += 1
         if isComposing { DispatchQueue.main.async { isComposing = true } }
         withAnimation(arrival) { images = [] }
         let lastID = messages.last?.id ?? 0
         pendingAfter = lastID
-        withAnimation(arrival) { pending = PendingMessage(text: text, images: uploads.map(\.preview)) }
+        withAnimation(arrival) { pending = PendingMessage(text: text, skill: skill, images: uploads.map(\.preview)) }
         Task {
             try? await Task.sleep(for: .milliseconds(300))
             withAnimation(arrival) { isSending = true }
             do {
-                try await client.deliver(text, images: uploads, to: agent.id, after: lastID)
+                try await client.deliver(text, images: uploads, running: skill, to: agent.id, after: lastID)
                 // It stays until a load started from here on finishes, which
                 // brings its saved copy: one already running may predate it.
                 withAnimation(arrival) { pending?.sentAfter = loads }
@@ -611,6 +727,7 @@ public struct AgentChatView: View {
                 self.error = error
                 draft = text
                 images = uploads + images
+                self.skill = skill
             }
             withAnimation(arrival) { isSending = false }
         }
@@ -640,9 +757,9 @@ public struct AgentChatView: View {
         }
     }
 
-    /// Whether the feed holds `text` from the user, newer than message `lastID`.
-    private func delivered(_ text: String, after lastID: Int) -> Bool {
-        messages.contains { $0.id > lastID && $0.sender == .user && $0.text == text }
+    /// Whether the feed holds `pending`'s saved copy, newer than message `lastID`.
+    private func delivered(_ pending: PendingMessage, after lastID: Int) -> Bool {
+        messages.contains { $0.id > lastID && pending.isSaved(as: $0) }
     }
 
     /// Picks option `option` of `choice`; the agent works on it like a sent
@@ -975,11 +1092,19 @@ struct WorkingIndicator: View {
 /// A message on its way to cohesiond, shown until its saved copy loads.
 private struct PendingMessage {
     let text: String
+    /// The skill it runs, with `text` as its note.
+    let skill: AgentSkill?
     let images: [PlatformImage]
     /// The loads started by the time cohesiond accepted it, `nil` until
     /// then, while it shows faded. A load started after holds its saved
     /// copy, which shows in its place unfaded: it's saved.
     var sentAfter: Int?
+
+    /// Whether `message` is its saved copy: the user's, with the same text,
+    /// or the same skill and note.
+    func isSaved(as message: AgentMessage) -> Bool {
+        message.sender == .user && message.typed == text && message.skillName == skill?.name
+    }
 }
 
 extension AnyTransition {
@@ -1093,7 +1218,22 @@ private struct MessageView: View, Equatable {
             } else {
                 excerptLine
             }
-        case .rebuiltContext, .unknown:
+        case .skill(let name, let prompt, let note):
+            if message.sender == .user {
+                SkillMessageView(
+                    message: message,
+                    name: name,
+                    prompt: prompt,
+                    note: note,
+                    reaction: reaction,
+                    images: images
+                )
+            } else {
+                excerptLine
+            }
+        case .rebuiltContext, .agenda, .usedSkill, .unknown:
+            // An agenda's change and a skill the agent ran are quiet lines,
+            // as the web's feed has them; agenda lines with one verb group.
             excerptLine
         }
     }
@@ -1213,7 +1353,7 @@ private struct ReactionLines: View {
     }
 }
 
-private struct UserBubble: View {
+struct UserBubble: View {
     let text: String
     /// The agent's reaction to it.
     let reaction: String?

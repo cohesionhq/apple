@@ -25,14 +25,32 @@ extension AgentColor {
 
 public extension AgentMessage {
     /// The icon of its quiet line, as the web's feed picks it: a memory's
-    /// brain, a rebuilt context's fold, an info mark for the rest.
+    /// brain, a rebuilt context's fold, an agenda's checklist, a skill the
+    /// agent ran's wand, an info mark for the rest.
     var quietSymbol: String {
         switch content {
         case .memory: "brain"
         case .rebuiltContext: "rectangle.compress.vertical"
+        case .agenda: AgentAgendaItem.agendaSymbol
+        case .usedSkill: AgentSkill.symbol
         default: "info.circle"
         }
     }
+}
+
+public extension AgentAgendaItem {
+    /// The agenda's own: its button and its line in the chat.
+    static let agendaSymbol = "checklist"
+    static let finishedSymbol = "checkmark.circle.fill"
+    static let finishedTint = Color.green
+    /// The step the agent is on, the first not finished, in the accent.
+    static let currentSymbol = "circle.inset.filled"
+    static let openSymbol = "circle"
+}
+
+public extension AgentSkill {
+    /// A skill's chip and the line where the agent ran one, as the web's wand.
+    static let symbol = "wand.and.sparkles"
 }
 
 public extension AgentMessage.Content {

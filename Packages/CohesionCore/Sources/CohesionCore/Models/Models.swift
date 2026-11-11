@@ -685,12 +685,21 @@ public struct AgentMessage: Decodable, Identifiable, Equatable {
         /// The agent's context was built again, shown as the message's
         /// excerpt. It carries no run, even in the middle of one.
         case rebuiltContext
+        /// The agent added, finished or cleared items of its agenda; its
+        /// excerpt says which, after its verb.
+        case agenda(AgentAgendaUpdate)
+        /// The user running one of the agent's skills, with its name and
+        /// prompt as they stood when sent, and what they wrote with it, or
+        /// an empty note.
+        case skill(name: String, prompt: String, note: String)
+        /// A skill the agent ran itself, by name.
+        case usedSkill(String)
         /// A kind from a newer cohesiond than this build knows, shown as
         /// the message's excerpt.
         case unknown
 
         public enum Keys: String, CodingKey {
-            case kind, text, error, module, memory, change, note, item
+            case kind, text, error, module, memory, change, note, item, name, prompt
         }
 
         public enum MemoryChange: String, Decodable {
@@ -719,6 +728,14 @@ public struct AgentMessage: Decodable, Identifiable, Equatable {
             case "askedAgent": self = .askedAgent(try AgentAsk(from: decoder))
             case "askedByAgent": self = .askedByAgent(try AgentAsk(from: decoder))
             case "rebuiltContext": self = .rebuiltContext
+            case "agenda": self = .agenda(try AgentAgendaUpdate(from: decoder))
+            case "skill":
+                self = .skill(
+                    name: try container.decode(String.self, forKey: .name),
+                    prompt: try container.decode(String.self, forKey: .prompt),
+                    note: try container.decode(String.self, forKey: .note)
+                )
+            case "usedSkill": self = .usedSkill(try container.decode(String.self, forKey: .name))
             default: self = .unknown
             }
         }
@@ -727,6 +744,21 @@ public struct AgentMessage: Decodable, Identifiable, Equatable {
     /// The message's text, when it is a text message.
     public var text: String? {
         if case .text(let text) = content { return text }
+        return nil
+    }
+
+    /// What the user typed, for a text message or one running a skill: the
+    /// text, or the skill's note.
+    public var typed: String? {
+        switch content {
+        case .text(let text), .skill(_, _, let text): text
+        default: nil
+        }
+    }
+
+    /// The name of the skill the user ran with it, when they ran one.
+    public var skillName: String? {
+        if case .skill(let name, _, _) = content { return name }
         return nil
     }
 
@@ -795,6 +827,113 @@ public struct AgentMessage: Decodable, Identifiable, Equatable {
             return "\(reactionExcerptVerb): \(reactionExcerpt)"
         }
         return "Reacted \(reaction ?? "") to “\(line ?? "")”"
+    }
+}
+
+/// One change to an agent's agenda, in an `agenda` message.
+public struct AgentAgendaUpdate: Decodable, Equatable {
+    public let change: Change
+    /// The text of the items it added, finished or cleared, in order.
+    public let items: [String]
+
+    public enum Change: String, Decodable {
+        /// It added `items`.
+        case appended
+        /// It finished the one item in `items`.
+        case finished
+        /// It cleared the agenda, whose items were `items`.
+        case reset
+    }
+}
+
+/// One step of an agent's agenda: what it means to do next, in order with
+/// the others and shared by every thread of its conversation. A finished
+/// item stays until the agent clears the agenda.
+public struct AgentAgendaItem: Decodable, Identifiable, Equatable {
+    public let id: Int
+    /// Where it stands in the agenda, from 1.
+    public let position: Int
+    public let text: String
+    /// When it was finished; `nil` while it is open.
+    public let finishedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, position, text
+        case finishedAt = "finished_at"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        position = try container.decode(Int.self, forKey: .position)
+        text = try container.decode(String.self, forKey: .text)
+        finishedAt = try container.decodeIfPresent(Double.self, forKey: .finishedAt)
+            .map(Date.init(timeIntervalSince1970:))
+    }
+
+    public var isFinished: Bool { finishedAt != nil }
+}
+
+/// A prompt the user saved for one agent, or for every agent on a team, to
+/// run by name from the agent's composer.
+public struct AgentSkill: Decodable, Identifiable, Hashable {
+    public let id: Int
+    /// Whose it is.
+    public let scope: Scope
+    /// Unique in its scope, ignoring case.
+    public let name: String
+    /// One line saying when to use it; empty when unset.
+    public let description: String
+    /// What it asks the agent to do.
+    public let prompt: String
+
+    /// Whose a skill is: one agent's, or every agent's on one team.
+    public enum Scope: Decodable, Hashable {
+        case agent(Int)
+        case team(Int)
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case agentID = "agent_id"
+            case teamID = "team_id"
+        }
+
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            switch try container.decode(String.self, forKey: .kind) {
+            case "agent": self = .agent(try container.decode(Int.self, forKey: .agentID))
+            case "team": self = .team(try container.decode(Int.self, forKey: .teamID))
+            default:
+                throw DecodingError.dataCorruptedError(
+                    forKey: .kind, in: container, debugDescription: "Unknown skill scope")
+            }
+        }
+    }
+
+    /// The skills `agent` has, by name: its own, then its team's whose names
+    /// none of its own take, since its own wins, as cohesiond picks them.
+    public static func of(_ agent: Agent, in skills: [AgentSkill]) -> [AgentSkill] {
+        let own = skills.filter { $0.scope == .agent(agent.id) }
+        let taken = Set(own.map { $0.name.lowercased() })
+        let team = agent.teamID.map { teamID in
+            skills.filter { $0.scope == .team(teamID) && !taken.contains($0.name.lowercased()) }
+        } ?? []
+        return (own + team).sorted {
+            switch $0.name.localizedCaseInsensitiveCompare($1.name) {
+            case .orderedSame: $0.id < $1.id
+            case let order: order == .orderedAscending
+            }
+        }
+    }
+
+    /// The skills of `skills` whose names hold `query`, ignoring case: those
+    /// starting with it first, as the web's composer offers them.
+    public static func matching(_ query: String, in skills: [AgentSkill]) -> [AgentSkill] {
+        let query = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return skills }
+        let starts = skills.filter { $0.name.lowercased().hasPrefix(query) }
+        let within = skills.filter { !$0.name.lowercased().hasPrefix(query) && $0.name.lowercased().contains(query) }
+        return starts + within
     }
 }
 

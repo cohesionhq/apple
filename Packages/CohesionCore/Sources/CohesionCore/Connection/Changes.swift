@@ -50,6 +50,9 @@ public enum Invalidation: Decodable, Equatable {
     case resourceKinds(workspaceID: Int)
     /// A memory was remembered or forgotten, or an agent's went with it.
     case memories
+    /// The skills changed: one was saved, changed or deleted, or an agent's
+    /// or a team's went with it.
+    case agentSkills
     /// A client offered an actor, changed one or stopped offering it.
     case actors
     /// An actor session was started, said something, changed where it stands
@@ -99,6 +102,7 @@ public enum Invalidation: Decodable, Equatable {
         case "resources": self = .resources(workspaceID: try container.decode(Int.self, forKey: .id))
         case "resourceKinds": self = .resourceKinds(workspaceID: try container.decode(Int.self, forKey: .id))
         case "memories": self = .memories
+        case "agentSkills": self = .agentSkills
         case "actors": self = .actors
         case "actorSessions": self = .actorSessions
         case "actorSession": self = .actorSession(try container.decode(Int.self, forKey: .id))

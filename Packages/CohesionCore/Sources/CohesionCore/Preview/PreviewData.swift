@@ -234,6 +234,10 @@ nonisolated private struct Fixtures {
                 : []
         case "listAgentCues":
             return cues(args["agent_id"] as? Int)
+        case "listAgentAgenda":
+            return agenda(args["agent_id"] as? Int)
+        case "listAgentSkills":
+            return skills
         case "listAgentRuns":
             let runs = runs(args["agent_id"] as? Int)
             return Array(runs.prefix(args["limit"] as? Int ?? 50))
@@ -1399,6 +1403,51 @@ nonisolated private struct Fixtures {
 
                 The edits are in [Pricing Notes](cohesion://document/1/3).
                 """)),
+            message(
+                1203, minutesAgo(20), "user",
+                ["kind": "skill", "name": "Launch post",
+                 "prompt": "Draft a launch post for what I name: a hook, three short paragraphs, and a call to action.",
+                 "note": "The Mac app"],
+                excerpt: "Skill “Launch post”: The Mac app"),
+            message(
+                1204, minutesAgo(19), "agent",
+                ["kind": "agenda", "change": "appended",
+                 "items": ["Read the Mac app's changelog", "Draft the post", "Send it to Daniel"]],
+                excerpt: "Read the Mac app's changelog; Draft the post; Send it to Daniel",
+                verb: "Added to the agenda"),
+            message(
+                1205, minutesAgo(18), "agent", ["kind": "usedSkill", "name": "House style"],
+                excerpt: "Using skill “House style”"),
+            message(
+                1206, minutesAgo(15), "agent",
+                ["kind": "agenda", "change": "finished", "items": ["Read the Mac app's changelog"]],
+                excerpt: "Read the Mac app's changelog", verb: "Finished"),
+        ]
+    }
+
+    func agenda(_ agentID: Int?) -> [[String: Any]] {
+        guard agentID == 3 else { return [] }
+        return [
+            ["id": 1, "agent_id": 3, "position": 1, "text": "Read the Mac app's changelog",
+             "added_at": minutesAgo(19), "finished_at": minutesAgo(15)],
+            ["id": 2, "agent_id": 3, "position": 2, "text": "Draft the post", "added_at": minutesAgo(19)],
+            ["id": 3, "agent_id": 3, "position": 3, "text": "Send it to Daniel", "added_at": minutesAgo(19)],
+        ]
+    }
+
+    var skills: [[String: Any]] {
+        [
+            ["id": 1, "scope": ["kind": "agent", "agent_id": 3], "name": "Launch post",
+             "description": "A launch post for a feature or product",
+             "prompt": "Draft a launch post for what I name: a hook, three short paragraphs, and a call to action.",
+             "agent_can_use": false, "created_at": daysAgo(10)],
+            ["id": 2, "scope": ["kind": "agent", "agent_id": 3], "name": "House style",
+             "description": "Before writing anything public",
+             "prompt": "Short sentences, no jargon, no \"seamless\". Say what a button does.",
+             "agent_can_use": true, "created_at": daysAgo(20)],
+            ["id": 3, "scope": ["kind": "team", "team_id": 1], "name": "Weekly review",
+             "description": "", "prompt": "Recap what moved this week and what's first next week.",
+             "agent_can_use": true, "created_at": daysAgo(30)],
         ]
     }
 

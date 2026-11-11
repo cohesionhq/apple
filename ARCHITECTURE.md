@@ -215,7 +215,21 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   the run that answers it shows no trigger, as the web's feed does. A
   fork's steps (`run_part`) are gathered by run (`CollapsedRuns`, the web's
   `collapseRuns`) into a row that opens `ForkSheet`; `listAgentRuns` says
-  which forks are still running while the agent works.
+  which forks are still running while the agent works. An `agenda` line
+  (the agent's agenda tools) and a `usedSkill` line are quiet lines of
+  their excerpt; agenda lines with one verb group as notes do.
+- `Agents/AgentAgendaView.swift`: the agent's agenda (`listAgentAgenda`,
+  read with each load of the chat), in the chat's inspector: beside it on
+  iPad and the Mac until closed, a sheet on iPhone, from Agenda in the
+  navigation bar, which shows only while the agenda has items.
+- `Agents/AgentSkills.swift`: skills. The chat loads every skill
+  (`listAgentSkills`, reloaded on `agentSkills`) and offers the agent's
+  (`AgentSkill.of`: its own, then its team's whose names its own don't
+  take) in `SkillPicker` while the field starts with `/`; the one picked
+  is a `SkillChip` over the field, sent as `skill` on `sendAgentMessage`
+  with the text as its note. A `skill` message draws as its chip, opening
+  the prompt as sent, then the note. A daemon without skills refuses the
+  list, and `/` offers nothing.
 - `Actors/ActorUsageView.swift`: the actors' plan usage, in a sheet
   from Actor Usage in the navigation bar's overflow menu (`ActorUsageMenu`,
   on the Intelligence tab and the iPad's and the Mac's sidebars), as the web's Actors
