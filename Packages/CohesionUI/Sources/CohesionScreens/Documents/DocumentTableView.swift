@@ -188,5 +188,8 @@ private struct ChoicePill: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
             .background(option.tint.map { AnyShapeStyle($0.opacity(0.15)) } ?? AnyShapeStyle(.fill.tertiary), in: .capsule)
+            // Whole, as a tag's pill is, rather than cut short in a row's
+            // flow of values.
+            .fixedSize()
     }
 }
