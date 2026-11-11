@@ -598,6 +598,30 @@ extension CohesionClient {
         ])
     }
 
+    // MARK: Document folders and tables
+
+    /// The workspace's document folders, each with its parent, in their
+    /// order among their siblings; the Inbox isn't one.
+    public func listDocumentFolders(in workspaceID: Int) async throws -> [DocumentFolder] {
+        try await call("listDocumentFolders", ["workspace_id": workspaceID])
+    }
+
+    /// A table's properties, its columns, in their order; none for a
+    /// folder that isn't a table.
+    public func listProperties(of folder: DocumentFolder) async throws -> [DocumentFolderProperty] {
+        try await call("listDocumentFolderProperties", ["workspace_id": folder.workspaceID, "folder_id": folder.id])
+    }
+
+    /// A table's rows, the documents in its folder with their values, in the
+    /// order they were created.
+    public func listRows(of folder: DocumentFolder) async throws -> [DocumentTableRow] {
+        try await call("listTableRows", [
+            "workspace_id": folder.workspaceID,
+            "folder_id": folder.id,
+            "filters": [Any](),
+        ])
+    }
+
     // MARK: Agents
 
     public func listAgents() async throws -> [Agent] {

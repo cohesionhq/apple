@@ -24,6 +24,12 @@ public enum Invalidation: Decodable, Equatable {
     case profile
     /// A workspace's documents changed, journal entries among them.
     case documents(workspaceID: Int)
+    /// A workspace's document folders changed: one was created, renamed,
+    /// moved or deleted, or became a table or stopped being one.
+    case documentFolders(workspaceID: Int)
+    /// A document folder's table changed: a property, a value, or a row
+    /// that came, went or was renamed.
+    case documentTable(folderID: Int)
     /// The feed list changed, or a feed's unread count did. Feeds are shared
     /// by every workspace.
     case feeds
@@ -83,6 +89,8 @@ public enum Invalidation: Decodable, Equatable {
         case "contacts": self = .contacts(workspaceID: try container.decode(Int.self, forKey: .id))
         case "profile": self = .profile
         case "documents": self = .documents(workspaceID: try container.decode(Int.self, forKey: .id))
+        case "documentFolders": self = .documentFolders(workspaceID: try container.decode(Int.self, forKey: .id))
+        case "documentTable": self = .documentTable(folderID: try container.decode(Int.self, forKey: .id))
         case "feeds": self = .feeds
         case "feedArticles": self = .feedArticles
         case "intelligence": self = .intelligence

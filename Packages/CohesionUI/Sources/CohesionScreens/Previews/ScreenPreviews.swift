@@ -183,6 +183,13 @@ private func agent(_ window: WindowModel, _ id: Int = 1) -> Agent? {
     .previewWindow()
 }
 
+#Preview("Document Table") {
+    PreviewPushed(backTitle: "Documents") {
+        DocumentTableView(folder: DocumentFolder(id: 1, workspaceID: 1, title: "Models", isTable: true))
+    }
+    .previewWindow()
+}
+
 // MARK: Contacts
 
 #Preview("Edit Contact") {
