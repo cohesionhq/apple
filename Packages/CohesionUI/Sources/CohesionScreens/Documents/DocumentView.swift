@@ -6,7 +6,8 @@ import SwiftUI
 /// A document in the Markdown editor, titled in the navigation bar, where
 /// tapping the title renames it. Edits save themselves a moment after
 /// typing stops, and when the document closes or the app leaves the
-/// foreground, as the journal's do.
+/// foreground, as the journal's do. A row of a table has its properties in
+/// an inspector, beside it on iPad and a sheet on iPhone.
 struct DocumentView: View {
     let workspaceID: Int
     let documentID: Int
@@ -23,6 +24,11 @@ struct DocumentView: View {
     /// differs from it.
     @State private var saved = ""
     @State private var saveTask: Task<Void, Never>?
+    /// Its table's properties, none unless it's a row of one.
+    @State private var properties: [DocumentFolderProperty] = []
+    /// Its values, as a row of its table.
+    @State private var row: DocumentTableRow?
+    @State private var showsProperties = false
     @State private var isConfirmingDelete = false
     /// Set once deleting starts, so the change it announces doesn't load it.
     @State private var isDeleted = false
@@ -54,6 +60,13 @@ struct DocumentView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarRole(.editor)
         .toolbar {
+            if !properties.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Properties", systemImage: "info.circle") {
+                        showsProperties.toggle()
+                    }
+                }
+            }
             ToolbarItemGroup(placement: .secondaryAction) {
                 Button("Copy as Markdown", systemImage: "doc.on.doc") {
                     Pasteboard.general.string = text
@@ -80,6 +93,12 @@ struct DocumentView: View {
         } message: {
             Text("Can’t be undone.")
         }
+        .inspector(isPresented: Binding { showsProperties && !properties.isEmpty } set: { showsProperties = $0 }) {
+            if let document {
+                DocumentPropertiesForm(document: document, properties: properties, row: $row)
+                    .presentationDetents([.medium, .large])
+            }
+        }
         .onChange(of: title) { rename() }
         .onChange(of: text) { scheduleSave() }
         .onChange(of: scenePhase) {
@@ -87,6 +106,7 @@ struct DocumentView: View {
         }
         .onDisappear { saveNow() }
         .task { await watch() }
+        .task(id: document?.folderID) { await watchTable() }
         .forwardsItems()
         .errorAlert($error)
     }
@@ -114,6 +134,26 @@ struct DocumentView: View {
         let workspaceID = workspaceID
         for await origin in client.loads(matching: { $0 == .documents(workspaceID: workspaceID) }) {
             await load(origin)
+        }
+    }
+
+    /// Keeps the document's properties and values current while it's a row
+    /// of a table; the stream also yields once, which does the first load.
+    /// A document in the Inbox or a plain folder has none.
+    private func watchTable() async {
+        guard let client = model.client, let document, let folderID = document.folderID else {
+            properties = []
+            row = nil
+            return
+        }
+        for await origin in client.loads(matching: { $0 == .documentTable(folderID: folderID) }) {
+            await origin.run {
+                async let loadedProperties = client.listProperties(ofFolder: folderID, in: document.workspaceID)
+                async let loadedRow = client.tableRow(of: document, inFolder: folderID)
+                let (properties, row) = try await (loadedProperties, loadedRow)
+                self.properties = properties
+                self.row = properties.isEmpty ? nil : row
+            } failed: { self.error = $0 }
         }
     }
 

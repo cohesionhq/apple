@@ -203,6 +203,16 @@ nonisolated private struct Fixtures {
             let id = args["document_id"] as? Int
             return allDocuments.first { ($0["id"] as? Int) == id && ($0["workspace_id"] as? Int) == workspace }
 
+        case "listDocumentFolders":
+            return workspace == 1 ? documentFolders : []
+        case "listDocumentFolderProperties":
+            return args["folder_id"] as? Int == 1 ? modelProperties : []
+        case "listTableRows":
+            return args["folder_id"] as? Int == 1 ? modelRows : []
+        case "getTableRow", "setDocumentValue":
+            let id = args["document_id"] as? Int
+            return modelRows.first { $0["document_id"] as? Int == id }
+
         // Agents
         case "listIntelligenceAgents":
             return agents
@@ -995,13 +1005,72 @@ nonisolated private struct Fixtures {
             """),
             document(7, 2, "Packing List", modified: daysAgo(2), "- Passport\n- Chargers\n- Rain jacket\n- Book for the flight"),
             document(8, 2, "Recipes to Try", modified: daysAgo(6), "## Fig and goat cheese tart\n\nPuff pastry, figs, honey, thyme. 25 minutes at 200°C."),
+            document(31, 1, "Claude Opus 5.5", modified: daysAgo(3), folder: 1, """
+            # Claude Opus 5.5
+
+            The default for agents and long-running work.
+            """),
         ]
     }
 
-    func document(_ id: Int, _ workspace: Int, _ title: String, modified: Int, _ contents: String) -> [String: Any] {
+    func document(_ id: Int, _ workspace: Int, _ title: String, modified: Int, folder: Int? = nil, _ contents: String) -> [String: Any] {
         [
             "id": id, "workspace_id": workspace, "document_type": "normal", "title": title,
-            "contents": contents, "modified": modified,
+            "contents": contents, "modified": modified, "folder_id": folder ?? NSNull(),
+        ]
+    }
+
+    /// Studio's document folders: Models, a table, and Meetings, a plain one.
+    var documentFolders: [[String: Any]] {
+        [
+            ["id": 1, "workspace_id": 1, "parent_id": NSNull(), "title": "Models", "sort_order": 0, "deleted": false, "is_table": true],
+            ["id": 2, "workspace_id": 1, "parent_id": NSNull(), "title": "Meetings", "sort_order": 1, "deleted": false, "is_table": false],
+        ]
+    }
+
+    /// The Models table's columns: one of each type but a plain decimal.
+    var modelProperties: [[String: Any]] {
+        func property(_ id: Int, _ name: String, _ type: String, options: [[String: Any]]? = nil) -> [String: Any] {
+            var property: [String: Any] = [
+                "id": id, "folder_id": 1, "name": name, "data_type": type, "sort_order": id, "formula": NSNull(),
+            ]
+            property["options"] = options
+            return property
+        }
+        func option(_ id: Int, _ name: String, _ color: String?) -> [String: Any] {
+            ["id": id, "property_id": 1, "name": name, "color": color ?? NSNull(), "sort_order": id]
+        }
+        return [
+            property(1, "Provider", "choice", options: [
+                option(1, "Anthropic", "orange"), option(2, "OpenAI", "green"), option(3, "Local", nil),
+            ]),
+            property(2, "Context", "integer"),
+            property(3, "Input Price", "currency"),
+            property(4, "Released", "date"),
+            property(5, "Default", "checkbox"),
+            property(6, "Notes", "text"),
+        ]
+    }
+
+    /// The Models table's rows, documents 31 to 34.
+    var modelRows: [[String: Any]] {
+        func row(_ id: Int, _ title: String, _ cells: [(Int, String, Any)]) -> [String: Any] {
+            [
+                "document_id": id, "folder_id": 1, "title": title,
+                "cells": cells.map { ["property_id": $0.0, "value": ["type": $0.1, "value": $0.2]] },
+            ]
+        }
+        return [
+            row(31, "Claude Opus 5.5", [
+                (1, "choice", 1), (2, "integer", 1_000_000), (3, "currency", 5), (4, "date", "2026-09-30"),
+                (5, "checkbox", true), (6, "text", "Agents and long work"),
+            ]),
+            row(32, "Claude Haiku 5.5", [
+                (1, "choice", 1), (2, "integer", 200_000), (3, "currency", 0.8), (4, "date", "2026-09-30"),
+                (5, "checkbox", false), (6, "text", "Background runs"),
+            ]),
+            row(33, "GPT-6", [(1, "choice", 2), (2, "integer", 400_000), (3, "currency", 2.5), (4, "date", "2025-12-11")]),
+            row(34, "Qwen on the Mac Studio", [(1, "choice", 3), (2, "integer", 128_000), (3, "currency", 0)]),
         ]
     }
 

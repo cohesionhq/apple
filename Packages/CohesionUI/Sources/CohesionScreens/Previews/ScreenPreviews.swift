@@ -183,6 +183,26 @@ private func agent(_ window: WindowModel, _ id: Int = 1) -> Agent? {
     .previewWindow()
 }
 
+#Preview("Document Table") {
+    PreviewPushed(backTitle: "Documents") {
+        DocumentTableView(folder: DocumentFolder(id: 1, workspaceID: 1, title: "Models", isTable: true))
+    }
+    .previewWindow()
+}
+
+#Preview("Document Properties") {
+    PreviewLoaded { client in
+        let document = try await client.document(31, in: 1)
+        let properties = try await client.listProperties(ofFolder: 1, in: 1)
+        return (document, properties, try await client.tableRow(of: document, inFolder: 1))
+    } content: { document, properties, row in
+        PreviewSheet {
+            DocumentPropertiesForm(document: document, properties: properties, row: .constant(row))
+        }
+    }
+    .previewWindow()
+}
+
 // MARK: Contacts
 
 #Preview("Edit Contact") {

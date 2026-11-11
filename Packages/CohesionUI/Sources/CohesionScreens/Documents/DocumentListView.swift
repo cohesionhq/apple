@@ -4,8 +4,9 @@ import CohesionUI
 import SwiftUI
 
 /// A workspace's documents, journal entries aside, most recently modified
-/// first and grouped by when; a document opens in the Markdown editor,
-/// zooming out of its row on iPad. It's pushed in the iPhone's Workspace
+/// first and grouped by when, under its tables (folders with properties),
+/// which open as tables; a document opens in the Markdown editor, zooming
+/// out of its row on iPad. It's pushed in the iPhone's Workspace
 /// tab and shown on a stack of its own beside the iPad's sidebar.
 struct DocumentListView: View {
     let workspaceID: Int
@@ -13,6 +14,8 @@ struct DocumentListView: View {
     @Environment(AppModel.self) private var model
 
     @State private var documents: [Document] = []
+    /// The workspace's folders that are tables, in their order.
+    @State private var tables: [DocumentFolder] = []
     /// A document just created, opened once it is.
     @State private var created: Int?
     @State private var query = ""
@@ -34,6 +37,17 @@ struct DocumentListView: View {
 
     var body: some View {
         List {
+            if query.isEmpty, !tables.isEmpty {
+                Section("Tables") {
+                    ForEach(tables) { folder in
+                        NavigationLink {
+                            DocumentTableView(folder: folder)
+                        } label: {
+                            Label(folder.title, systemImage: DocumentFolder.tableSymbol)
+                        }
+                    }
+                }
+            }
             ForEach(groups, id: \.title) { group in
                 Section(group.title) {
                     ForEach(group.documents) { document in
@@ -120,13 +134,23 @@ struct DocumentListView: View {
     private func load(_ origin: LoadOrigin = .automatic) async {
         guard let client = model.client else { return }
         await origin.run {
+            async let loadedTables = loadTables()
             let loaded = try await client.listDocuments(in: workspaceID)
+            let tables = await loadedTables
             withAnimation {
                 documents = loaded
+                if let tables { self.tables = tables }
                 isLoaded = true
             }
             if !query.isEmpty { await search(origin) }
         } failed: { self.error = $0 }
+    }
+
+    /// The workspace's tables, or `nil` if they couldn't be listed: quietly,
+    /// as a daemon from before folders has none to list.
+    private func loadTables() async -> [DocumentFolder]? {
+        guard let client = model.client else { return nil }
+        return try? await client.listDocumentFolders(in: workspaceID).filter(\.isTable)
     }
 
     /// Asks cohesiond for the documents matching `query` once typing pauses.
@@ -148,7 +172,9 @@ struct DocumentListView: View {
     private func watch() async {
         guard let client = model.client else { return }
         let workspaceID = workspaceID
-        for await origin in client.loads(matching: { $0 == .documents(workspaceID: workspaceID) }) {
+        for await origin in client.loads(matching: {
+            $0 == .documents(workspaceID: workspaceID) || $0 == .documentFolders(workspaceID: workspaceID)
+        }) {
             await load(origin)
         }
     }

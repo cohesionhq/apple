@@ -287,3 +287,22 @@ public extension ArticleSnapshot {
     /// "Not Fetched", on an article with no snapshot captured.
     static let notFetchedTint = Color.orange
 }
+
+// MARK: - Documents
+
+public extension DocumentFolder {
+    /// A table's glyph, as the web's folder tree marks one.
+    static let tableSymbol = "tablecells"
+}
+
+public extension PropertyValue {
+    /// A checkbox's box, filled when checked.
+    static func checkboxSymbol(checked: Bool) -> String {
+        checked ? "checkmark.square.fill" : "square"
+    }
+}
+
+public extension PropertyOption {
+    /// What a choice's pill is drawn in: its color, or none, as a tag is.
+    var tint: Color? { color?.color }
+}

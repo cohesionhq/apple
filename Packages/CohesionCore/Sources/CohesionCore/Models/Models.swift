@@ -958,12 +958,16 @@ public struct Document: Decodable, Identifiable, Hashable {
     public let modified: Date
     /// For a journal entry, its day as `"YYYY-MM-DD"`.
     public let journalDate: String?
+    /// The folder it's filed in, or `nil` in the Inbox; in a table's, it's
+    /// a row. Absent from a daemon from before folders.
+    public let folderID: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, contents, modified
         case workspaceID = "workspace_id"
         case type = "document_type"
         case journalDate = "journal_date"
+        case folderID = "folder_id"
     }
 
     public init(from decoder: any Decoder) throws {
@@ -975,6 +979,7 @@ public struct Document: Decodable, Identifiable, Hashable {
         contents = try container.decode(String.self, forKey: .contents)
         modified = Date(timeIntervalSince1970: try container.decode(Double.self, forKey: .modified))
         journalDate = try container.decodeIfPresent(String.self, forKey: .journalDate)
+        folderID = try container.decodeIfPresent(Int.self, forKey: .folderID)
     }
 }
 
@@ -982,4 +987,173 @@ public enum DocumentType: String, Decodable {
     case normal
     /// A day's journal entry, which the journal shows.
     case journal
+}
+
+// MARK: - Document folders and tables
+
+/// A folder documents are filed in. One with properties is a table, each of
+/// its documents a row.
+public struct DocumentFolder: Decodable, Identifiable, Hashable {
+    public let id: Int
+    public let workspaceID: Int
+    /// The folder it sits in, or `nil` at the top level.
+    public let parentID: Int?
+    public let title: String
+    /// Whether it has properties, so shows as a table.
+    public let isTable: Bool
+
+    public init(id: Int, workspaceID: Int, parentID: Int? = nil, title: String, isTable: Bool) {
+        self.id = id
+        self.workspaceID = workspaceID
+        self.parentID = parentID
+        self.title = title
+        self.isTable = isTable
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case workspaceID = "workspace_id"
+        case parentID = "parent_id"
+        case isTable = "is_table"
+    }
+}
+
+/// A table's column: a value each row may hold, of one type.
+public struct DocumentFolderProperty: Decodable, Identifiable, Hashable {
+    public let id: Int
+    public let folderID: Int
+    public let name: String
+    public let type: PropertyType
+    /// Whether a formula computes its values, so none is set by hand.
+    public let isFormula: Bool
+
+    /// What a property's values are, and a choice's options.
+    public enum PropertyType: Hashable {
+        case text, integer, decimal, currency, checkbox, date
+        /// One of `options`, in their order.
+        case choice([PropertyOption])
+        /// A type this build doesn't know; its values show as empty.
+        case other
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, options, formula
+        case folderID = "folder_id"
+        case dataType = "data_type"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        folderID = try container.decode(Int.self, forKey: .folderID)
+        name = try container.decode(String.self, forKey: .name)
+        isFormula = try container.contains(.formula) && !container.decodeNil(forKey: .formula)
+        type = switch try container.decode(String.self, forKey: .dataType) {
+        case "text": .text
+        case "integer": .integer
+        case "decimal": .decimal
+        case "currency": .currency
+        case "checkbox": .checkbox
+        case "date": .date
+        case "choice": .choice(try container.decode([PropertyOption].self, forKey: .options))
+        default: .other
+        }
+    }
+
+    /// Whether its values are numbers, which line up on the trailing edge.
+    public var isNumeric: Bool {
+        switch type {
+        case .integer, .decimal, .currency: true
+        default: false
+        }
+    }
+}
+
+/// One of a choice property's options.
+public struct PropertyOption: Decodable, Identifiable, Hashable {
+    public let id: Int
+    public let name: String
+    /// The color it's drawn in, from the agents' palette, or `nil` for none.
+    public let color: AgentColor?
+}
+
+/// A document in a table, with its values.
+public struct DocumentTableRow: Decodable, Identifiable, Hashable {
+    /// The document's id.
+    public let id: Int
+    public let title: String
+    /// Its values by property id; a property it holds none in is absent.
+    public var values: [Int: PropertyValue]
+
+    private struct Cell: Decodable {
+        let propertyID: Int
+        let value: PropertyValue
+
+        enum CodingKeys: String, CodingKey {
+            case value
+            case propertyID = "property_id"
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, cells
+        case id = "document_id"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        let cells = try container.decode([Cell].self, forKey: .cells)
+        values = Dictionary(cells.map { ($0.propertyID, $0.value) }, uniquingKeysWith: { first, _ in first })
+    }
+}
+
+/// A row's value for a property, of the property's type.
+public enum PropertyValue: Decodable, Hashable {
+    case text(String)
+    case integer(Int)
+    case decimal(Double)
+    /// An amount; a table names no currency.
+    case currency(Double)
+    case checkbox(Bool)
+    /// A day, as `"YYYY-MM-DD"`.
+    case date(String)
+    /// The id of one of its property's options.
+    case choice(Int)
+    /// A type this build doesn't know.
+    case other
+
+    enum CodingKeys: String, CodingKey {
+        case type, value
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self = switch try container.decode(String.self, forKey: .type) {
+        case "text": .text(try container.decode(String.self, forKey: .value))
+        case "integer": .integer(try container.decode(Int.self, forKey: .value))
+        case "decimal": .decimal(try container.decode(Double.self, forKey: .value))
+        case "currency": .currency(try container.decode(Double.self, forKey: .value))
+        case "checkbox": .checkbox(try container.decode(Bool.self, forKey: .value))
+        case "date": .date(try container.decode(String.self, forKey: .value))
+        case "choice": .choice(try container.decode(Int.self, forKey: .value))
+        default: .other
+        }
+    }
+
+    /// The value as a command sends it, or `nil` for a type this build
+    /// doesn't know.
+    var wire: [String: Any]? {
+        switch self {
+        case .text(let text): ["type": "text", "value": text]
+        case .integer(let number): ["type": "integer", "value": number]
+        case .decimal(let number): ["type": "decimal", "value": number]
+        case .currency(let amount): ["type": "currency", "value": amount]
+        case .checkbox(let checked): ["type": "checkbox", "value": checked]
+        case .date(let day): ["type": "date", "value": day]
+        case .choice(let id): ["type": "choice", "value": id]
+        case .other: nil
+        }
+    }
 }
