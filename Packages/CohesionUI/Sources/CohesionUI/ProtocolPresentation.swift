@@ -143,11 +143,6 @@ public extension Color {
 }
 
 public extension ActivityOverallStatus {
-    /// What's in the ring once nothing is going.
-    var ringSymbol: String {
-        self == .failed ? "xmark" : "checkmark"
-    }
-
     /// As an actor session's status is drawn in the app: amber needs you,
     /// the brand while working, red failed, grey done.
     var tint: Color {

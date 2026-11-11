@@ -6,7 +6,7 @@ import WidgetKit
 
 /// Every cohesiond activity in one Live Activity: the counts by status, a
 /// row for each of the top activities and a bar of where everything stands;
-/// in the island, the Cohesion mark beside a ring of the counts.
+/// in the island, the Cohesion mark beside a grid of dots, one for each.
 struct ActivitiesLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CohesionActivitiesAttributes.self) { context in
@@ -46,10 +46,10 @@ struct ActivitiesLiveActivity: Widget {
             Mark(size: 20)
                 .padding(4)
         } compactTrailing: {
-            StatusRing(state: state)
+            StatusDots(state: state)
                 .padding(4)
         } minimal: {
-            StatusRing(state: state)
+            StatusDots(state: state)
         }
     }
 }
@@ -157,76 +157,49 @@ private struct SegmentBar: View {
     }
 }
 
-/// An arc for each status in its tint, its length its share of the counts,
-/// clockwise from the top in the counts' order, around how many need the
-/// user, in amber, while any do (what the island leads with); else how many
-/// are running; else a check once everything is done. One status is a whole
-/// ring.
-private struct StatusRing: View {
+/// A dot for each activity in the counts, in its status's tint and the
+/// counts' order, filling a square grid row by row: 1×1, then 2×2 up to
+/// four, 3×3 up to nine and 4×4 up to sixteen, the most pressing first
+/// beyond that. The grid stays square: slots past the last activity, and
+/// the one slot while there are none, are faint hollow rings.
+private struct StatusDots: View {
     let state: CohesionActivitiesAttributes.ContentState
-    var diameter: CGFloat = 20
-    var lineWidth: CGFloat = 3
+    var side: CGFloat = 20
 
-    /// The gap between arcs, as a share of the ring.
-    private static let gap = 0.05
-    /// The least of the ring an arc takes, so one of many still shows.
-    private static let minimumShare = 0.1
+    /// The most dots the grid holds, 4×4.
+    private static let capacity = 16
 
-    private struct Arc {
-        let status: ActivityStatus
-        let from: Double
-        let to: Double
-    }
-
-    private var arcs: [Arc] {
-        let counts = state.counts
-        guard counts.count > 1 else {
-            return counts.map { Arc(status: $0.status, from: 0, to: 1) }
-        }
-        let total = Double(counts.reduce(0) { $0 + $1.count })
-        let shares = counts.map { max(Double($0.count) / total, Self.minimumShare) }
-        let scale = (1 - Double(counts.count) * Self.gap) / shares.reduce(0, +)
-        var cursor = Self.gap / 2
-        return zip(counts, shares).map { count, share in
-            defer { cursor += share * scale + Self.gap }
-            return Arc(status: count.status, from: cursor, to: cursor + share * scale)
-        }
+    /// Each dot's status, the most pressing first, at most `capacity`.
+    private var dots: [ActivityStatus] {
+        Array(state.counts.flatMap { repeatElement($0.status, count: $0.count) }.prefix(Self.capacity))
     }
 
     var body: some View {
-        ZStack {
-            if state.counts.isEmpty {
-                Circle().strokeBorder(.quaternary, lineWidth: lineWidth)
+        let dots = dots
+        let columns = max(1, Int(Double(dots.count).squareRoot().rounded(.up)))
+        let spacing = columns > 1 ? side * 0.1 : 0
+        let diameter = min((side - spacing * CGFloat(columns - 1)) / CGFloat(columns), side / 2)
+        Grid(horizontalSpacing: spacing, verticalSpacing: spacing) {
+            ForEach(0..<columns, id: \.self) { row in
+                GridRow {
+                    ForEach(0..<columns, id: \.self) { column in
+                        let index = row * columns + column
+                        Group {
+                            if index < dots.count {
+                                Circle().fill(dots[index].tint)
+                            } else {
+                                // Hollow, so an empty slot never reads as done's grey.
+                                Circle().strokeBorder(.white.opacity(0.3), lineWidth: 1)
+                            }
+                        }
+                        .frame(width: diameter, height: diameter)
+                    }
+                }
             }
-            ForEach(arcs, id: \.status) { arc in
-                // Inset by half the stroke so it stays inside the frame.
-                Circle()
-                    .inset(by: lineWidth / 2)
-                    .trim(from: arc.from, to: arc.to)
-                    .stroke(arc.status.tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
-                    .rotationEffect(.degrees(-90))
-            }
-            center
         }
-        .frame(width: diameter, height: diameter)
-    }
-
-    @ViewBuilder private var center: some View {
-        let needs = state.needsAttentionCount
-        let shown = needs > 0 ? needs : state.runningCount
-        if shown > 0 {
-            Text(shown, format: .number)
-                .font(.system(size: diameter * 0.45, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-                .padding(lineWidth)
-                .foregroundStyle(needs > 0 ? AnyShapeStyle(.orange) : AnyShapeStyle(.primary))
-        } else {
-            Image(systemName: state.overall.ringSymbol)
-                .font(.system(size: diameter * 0.4, weight: .bold))
-                .foregroundStyle(state.overall.tint)
-        }
+        .frame(width: side, height: side)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(state.counts.map { "\($0.count) \($0.status.countLabel)" }.formatted(.list(type: .and)))
     }
 }
 
@@ -301,6 +274,18 @@ private extension CohesionActivitiesAttributes.ContentState {
     func moreCount(beyond shown: Int, at now: Date) -> Int {
         let agedOut = activities.count(where: { $0.hasAgedOut(at: now) })
         return max(0, totalCount - agedOut - shown)
+    }
+}
+
+private extension ActivityStatus {
+    /// What a count of activities in this status is called, for VoiceOver.
+    var countLabel: String {
+        switch self {
+        case .running, .waiting: "running"
+        case .paused: "need you"
+        case .succeeded, .cancelled: "done"
+        case .failed: "failed"
+        }
     }
 }
 
