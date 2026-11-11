@@ -158,16 +158,16 @@ private struct SegmentBar: View {
 }
 
 /// A dot for each activity in the counts, in its status's tint and the
-/// counts' order, filling a square grid row by row: 1×1, then 2×2 up to
-/// four, 3×3 up to nine and 4×4 up to sixteen, the most pressing first
-/// beyond that. The grid stays square: slots past the last activity, and
-/// the one slot while there are none, are faint hollow rings.
+/// counts' order, filling a square grid row by row: 2×2 up to four, then
+/// 3×3, the most pressing first beyond nine. The grid stays square: slots
+/// past the last activity, and all four while there are none, are faint
+/// hollow rings.
 private struct StatusDots: View {
     let state: CohesionActivitiesAttributes.ContentState
     var side: CGFloat = 20
 
-    /// The most dots the grid holds, 4×4.
-    private static let capacity = 16
+    /// The most dots the grid holds, 3×3.
+    private static let capacity = 9
 
     /// Each dot's status, the most pressing first, at most `capacity`.
     private var dots: [ActivityStatus] {
@@ -176,9 +176,9 @@ private struct StatusDots: View {
 
     var body: some View {
         let dots = dots
-        let columns = max(1, Int(Double(dots.count).squareRoot().rounded(.up)))
-        let spacing = columns > 1 ? side * 0.1 : 0
-        let diameter = min((side - spacing * CGFloat(columns - 1)) / CGFloat(columns), side / 2)
+        let columns = dots.count > 4 ? 3 : 2
+        let spacing = side * 0.1
+        let diameter = (side - spacing * CGFloat(columns - 1)) / CGFloat(columns)
         Grid(horizontalSpacing: spacing, verticalSpacing: spacing) {
             ForEach(0..<columns, id: \.self) { row in
                 GridRow {
