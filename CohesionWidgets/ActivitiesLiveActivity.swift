@@ -158,9 +158,10 @@ private struct SegmentBar: View {
 }
 
 /// A dot for each activity in the counts, in its status's tint and the
-/// counts' order, filling a square grid row by row: one dot, then 2×2 up to
+/// counts' order, filling a square grid row by row: 1×1, then 2×2 up to
 /// four, 3×3 up to nine and 4×4 up to sixteen, the most pressing first
-/// beyond that. A faint dot while there are none.
+/// beyond that. The grid stays square: slots past the last activity, and
+/// the one slot while there are none, are faint hollow rings.
 private struct StatusDots: View {
     let state: CohesionActivitiesAttributes.ContentState
     var side: CGFloat = 20
@@ -179,15 +180,19 @@ private struct StatusDots: View {
         let spacing = columns > 1 ? side * 0.1 : 0
         let diameter = min((side - spacing * CGFloat(columns - 1)) / CGFloat(columns), side / 2)
         Grid(horizontalSpacing: spacing, verticalSpacing: spacing) {
-            if dots.isEmpty {
-                Circle().fill(.quaternary).frame(width: diameter, height: diameter)
-            }
-            ForEach(Array(stride(from: 0, to: dots.count, by: columns)), id: \.self) { row in
+            ForEach(0..<columns, id: \.self) { row in
                 GridRow {
-                    ForEach(row..<min(row + columns, dots.count), id: \.self) { index in
-                        Circle()
-                            .fill(dots[index].tint)
-                            .frame(width: diameter, height: diameter)
+                    ForEach(0..<columns, id: \.self) { column in
+                        let index = row * columns + column
+                        Group {
+                            if index < dots.count {
+                                Circle().fill(dots[index].tint)
+                            } else {
+                                // Hollow, so an empty slot never reads as done's grey.
+                                Circle().strokeBorder(.white.opacity(0.3), lineWidth: 1)
+                            }
+                        }
+                        .frame(width: diameter, height: diameter)
                     }
                 }
             }
