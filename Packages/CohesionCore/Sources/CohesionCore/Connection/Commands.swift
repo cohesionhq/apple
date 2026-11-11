@@ -608,17 +608,38 @@ extension CohesionClient {
 
     /// A table's properties, its columns, in their order; none for a
     /// folder that isn't a table.
-    public func listProperties(of folder: DocumentFolder) async throws -> [DocumentFolderProperty] {
-        try await call("listDocumentFolderProperties", ["workspace_id": folder.workspaceID, "folder_id": folder.id])
+    public func listProperties(ofFolder folderID: Int, in workspaceID: Int) async throws -> [DocumentFolderProperty] {
+        try await call("listDocumentFolderProperties", ["workspace_id": workspaceID, "folder_id": folderID])
     }
 
     /// A table's rows, the documents in its folder with their values, in the
     /// order they were created.
-    public func listRows(of folder: DocumentFolder) async throws -> [DocumentTableRow] {
+    public func listRows(ofFolder folderID: Int, in workspaceID: Int) async throws -> [DocumentTableRow] {
         try await call("listTableRows", [
-            "workspace_id": folder.workspaceID,
-            "folder_id": folder.id,
+            "workspace_id": workspaceID,
+            "folder_id": folderID,
             "filters": [Any](),
+        ])
+    }
+
+    /// The document in its table's folder as a row, with its values.
+    public func tableRow(of document: Document, inFolder folderID: Int) async throws -> DocumentTableRow {
+        try await call("getTableRow", [
+            "workspace_id": document.workspaceID,
+            "folder_id": folderID,
+            "document_id": document.id,
+        ])
+    }
+
+    /// Sets the document's value for one of its table's properties, or
+    /// empties it for `nil`; refused for a formula's.
+    public func setValue(_ value: PropertyValue?, of property: DocumentFolderProperty, for document: Document) async throws -> DocumentTableRow {
+        try await call("setDocumentValue", [
+            "workspace_id": document.workspaceID,
+            "folder_id": property.folderID,
+            "document_id": document.id,
+            "property_id": property.id,
+            "value": value?.wire,
         ])
     }
 

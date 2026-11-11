@@ -209,6 +209,9 @@ nonisolated private struct Fixtures {
             return args["folder_id"] as? Int == 1 ? modelProperties : []
         case "listTableRows":
             return args["folder_id"] as? Int == 1 ? modelRows : []
+        case "getTableRow", "setDocumentValue":
+            let id = args["document_id"] as? Int
+            return modelRows.first { $0["document_id"] as? Int == id }
 
         // Agents
         case "listIntelligenceAgents":
@@ -1002,13 +1005,18 @@ nonisolated private struct Fixtures {
             """),
             document(7, 2, "Packing List", modified: daysAgo(2), "- Passport\n- Chargers\n- Rain jacket\n- Book for the flight"),
             document(8, 2, "Recipes to Try", modified: daysAgo(6), "## Fig and goat cheese tart\n\nPuff pastry, figs, honey, thyme. 25 minutes at 200°C."),
+            document(31, 1, "Claude Opus 5.5", modified: daysAgo(3), folder: 1, """
+            # Claude Opus 5.5
+
+            The default for agents and long-running work.
+            """),
         ]
     }
 
-    func document(_ id: Int, _ workspace: Int, _ title: String, modified: Int, _ contents: String) -> [String: Any] {
+    func document(_ id: Int, _ workspace: Int, _ title: String, modified: Int, folder: Int? = nil, _ contents: String) -> [String: Any] {
         [
             "id": id, "workspace_id": workspace, "document_type": "normal", "title": title,
-            "contents": contents, "modified": modified,
+            "contents": contents, "modified": modified, "folder_id": folder ?? NSNull(),
         ]
     }
 

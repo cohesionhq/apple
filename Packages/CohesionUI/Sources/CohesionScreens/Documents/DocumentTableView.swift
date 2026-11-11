@@ -3,9 +3,9 @@ import CohesionUI
 import SwiftUI
 
 /// A document folder that is a table, each of its documents a row: on iPad
-/// and the Mac a column for the title and one per property, in their order;
-/// on iPhone a list, each row its title over the values it holds. A row
-/// opens its document. Pushed from the documents' list.
+/// a column for the title and one per property, in their order; on iPhone
+/// a list of the titles alone. A row opens its document. Pushed from the
+/// documents' list.
 struct DocumentTableView: View {
     let folder: DocumentFolder
 
@@ -75,26 +75,7 @@ struct DocumentTableView: View {
             NavigationLink {
                 DocumentView(workspaceID: folder.workspaceID, documentID: row.id)
             } label: {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(row.title)
-                    let held = properties.filter { row.values[$0.id] != nil }
-                    if !held.isEmpty {
-                        // Each value after its property's name, as the
-                        // task rows' meta line reads.
-                        FlowLayout(spacing: 8) {
-                            ForEach(held) { property in
-                                HStack(spacing: 4) {
-                                    Text(property.name)
-                                        .foregroundStyle(.secondary)
-                                    PropertyValueView(property: property, value: row.values[property.id])
-                                }
-                                .accessibilityElement(children: .combine)
-                            }
-                        }
-                        .font(.footnote)
-                        .lineLimit(1)
-                    }
-                }
+                Text(row.title)
             }
         }
     }
@@ -102,8 +83,8 @@ struct DocumentTableView: View {
     private func load(_ origin: LoadOrigin = .automatic) async {
         guard let client = model.client else { return }
         await origin.run {
-            async let loadedProperties = client.listProperties(of: folder)
-            async let loadedRows = client.listRows(of: folder)
+            async let loadedProperties = client.listProperties(ofFolder: folder.id, in: folder.workspaceID)
+            async let loadedRows = client.listRows(ofFolder: folder.id, in: folder.workspaceID)
             let (properties, rows) = try await (loadedProperties, loadedRows)
             withAnimation {
                 self.properties = properties
@@ -124,11 +105,11 @@ struct DocumentTableView: View {
     }
 }
 
-/// A row's value for a property as a cell shows it: text and numbers in the
+/// A row's value for a property as a table's cell shows it: text and numbers in the
 /// reader's locale, an amount to two places with no currency sign (a table
 /// names none), a day as "Nov 3" (with its year outside this one), a box for
 /// a checkbox and a pill for a choice, as the web's table draws them.
-private struct PropertyValueView: View {
+struct PropertyValueView: View {
     let property: DocumentFolderProperty
     let value: PropertyValue?
 
@@ -188,8 +169,5 @@ private struct ChoicePill: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
             .background(option.tint.map { AnyShapeStyle($0.opacity(0.15)) } ?? AnyShapeStyle(.fill.tertiary), in: .capsule)
-            // Whole, as a tag's pill is, rather than cut short in a row's
-            // flow of values.
-            .fixedSize()
     }
 }
