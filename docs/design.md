@@ -78,7 +78,9 @@ actors, then the Library, leaving out what the apps have no screen for:
   collapses on scrolling down (`tabBarMinimizeBehavior(.onScrollDown)`).
   - **Under the tabs, the `ActorsBar`** (the tab bar's bottom accessory) says
     where the actor sessions stand: a dot per session in its status's tint,
-    the most pressing first (`StatusDots`, the Live Activity's own dots), and
+    the most pressing first (`StatusDots`, the Live Activity's own dots),
+    counted as the Live Activity counts (a session that ended, done or
+    failed, drops out five minutes after it did); and
     the counts but done's in the vocabulary's words ("1 needs you, 1
     working"), "All done" once every session is done, or "No sessions". It
     opens the sessions in a sheet, from which a session opens on the Agents

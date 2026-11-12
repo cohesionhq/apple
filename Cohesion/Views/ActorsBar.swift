@@ -7,12 +7,37 @@ import SwiftUI
 /// stand, as the Live Activity's dots (`StatusDots`, a dot per session, the
 /// most pressing first) and a line of counts ("1 needs you, 1 working"), which
 /// opens the sessions; then New Task, so a task can be captured from anywhere.
-/// Sessions that are done aren't counted unless every one is ("All done").
+/// It counts the sessions as the Live Activity counts its activities: one
+/// that ended (done or failed) drops out five minutes after it did, as the
+/// cloud drops a finished activity, though cohesiond lists it until it's
+/// resolved. The line leaves done out unless that's all there is ("All done").
 /// Beside the tab bar collapsed on scrolling, it has half the width, and the
 /// line names only the most pressing count.
 struct ActorsBar: View {
     /// Every actor's current sessions.
     let sessions: [ActorSession]
+    let showSessions: () -> Void
+    let newTask: () -> Void
+
+    var body: some View {
+        // Each minute, so a session that ended drops out on time.
+        TimelineView(.everyMinute) { context in
+            Content(
+                sessions: sessions.filter { $0.isCounted(at: context.date) },
+                isEmpty: sessions.isEmpty,
+                showSessions: showSessions,
+                newTask: newTask
+            )
+        }
+    }
+}
+
+/// The bar's content, for the sessions it counts at the moment.
+private struct Content: View {
+    /// The sessions counted.
+    let sessions: [ActorSession]
+    /// Whether cohesiond lists no sessions at all.
+    let isEmpty: Bool
     let showSessions: () -> Void
     let newTask: () -> Void
 
@@ -69,7 +94,7 @@ struct ActorsBar: View {
 
     /// What the bar says with nothing going on or failed.
     private var settled: String {
-        sessions.isEmpty ? "No sessions" : "All done"
+        isEmpty ? "No sessions" : "All done"
     }
 
     /// "1 needs you", in the vocabulary's words for the status.
@@ -79,6 +104,14 @@ struct ActorsBar: View {
 
     private func count(_ status: ActorSessionStatus) -> Int {
         sessions.count { $0.status == status }
+    }
+}
+
+private extension ActorSession {
+    /// Whether the bar counts it at `now`: while it's going, and for five
+    /// minutes after it ended, as the Live Activity keeps a finished activity.
+    func isCounted(at now: Date) -> Bool {
+        status.isGoing || now.timeIntervalSince(statusChangedAt) <= 5 * 60
     }
 }
 
