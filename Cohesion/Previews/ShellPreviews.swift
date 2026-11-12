@@ -27,52 +27,52 @@ private struct ShellPreview<Content: View>: View {
     }
 }
 
-#Preview("iPhone · Dashboard") {
-    ShellPreview { RootView(previewTab: .dashboard) }
-}
-
-#Preview("iPhone · Intelligence") {
-    ShellPreview { RootView(previewTab: .intelligence) }
-}
-
-#Preview("iPhone · Workspace") {
-    ShellPreview { RootView(previewTab: .workspace) }
-}
-
-#Preview("iPhone · Feeds") {
-    ShellPreview { RootView(previewTab: .feeds) }
-}
-
-#Preview("iPhone · Agent Chat") {
-    ShellPreview { RootView(previewTab: .intelligence, agentPath: [.agent(1)]) }
-}
-
-#Preview("iPhone · Actor Session") {
-    ShellPreview { RootView(previewTab: .intelligence, agentPath: [.actorSession(1)]) }
+#Preview("iPhone · Today") {
+    ShellPreview { RootView(previewTab: .today) }
 }
 
 #Preview("iPhone · Tasks") {
-    ShellPreview { RootView(previewTab: .workspace, workspacePath: [.page(.tasks(.inbox))]) }
+    ShellPreview { RootView(previewTab: .tasks, tasksPath: [.page(.tasks(.inbox))]) }
+}
+
+#Preview("iPhone · Task Lists") {
+    ShellPreview { RootView(previewTab: .tasks, tasksPath: []) }
+}
+
+#Preview("iPhone · Agents") {
+    ShellPreview { RootView(previewTab: .agents) }
+}
+
+#Preview("iPhone · Library") {
+    ShellPreview { RootView(previewTab: .library) }
+}
+
+#Preview("iPhone · Agent Chat") {
+    ShellPreview { RootView(previewTab: .agents, agentPath: [.agent(1)]) }
+}
+
+#Preview("iPhone · Actor Session") {
+    ShellPreview { RootView(previewTab: .agents, agentPath: [.actorSession(1)]) }
 }
 
 #Preview("iPhone · Journal") {
-    ShellPreview { RootView(previewTab: .workspace, workspacePath: [.page(.journal)]) }
-}
-
-#Preview("iPhone · Today") {
-    ShellPreview { RootView(previewTab: .workspace, workspacePath: [.page(.today)]) }
+    ShellPreview { RootView(previewTab: .library, libraryPath: [.page(.journal)]) }
 }
 
 #Preview("iPhone · Documents") {
-    ShellPreview { RootView(previewTab: .workspace, workspacePath: [.page(.documents)]) }
+    ShellPreview { RootView(previewTab: .library, libraryPath: [.page(.documents)]) }
+}
+
+#Preview("iPhone · Feeds") {
+    ShellPreview { RootView(previewTab: .library, libraryPath: [.page(.articles(.allFeeds))]) }
 }
 
 #Preview("iPhone · Contacts") {
-    ShellPreview { RootView(previewTab: .workspace, workspacePath: [.page(.contacts)]) }
+    ShellPreview { RootView(previewTab: .library, libraryPath: [.page(.contacts)]) }
 }
 
 #Preview("iPhone · Contact") {
-    ShellPreview { RootView(previewTab: .workspace, workspacePath: [.page(.contacts), .contact(1)]) }
+    ShellPreview { RootView(previewTab: .library, libraryPath: [.page(.contacts), .contact(1)]) }
 }
 
 #Preview("iPad · Split View") {

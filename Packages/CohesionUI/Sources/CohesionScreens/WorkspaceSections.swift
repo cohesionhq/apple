@@ -42,10 +42,11 @@ public enum SidebarItem: Hashable {
     case actorSession(Int)
 }
 
-/// A sidebar's list: the workspace's pages and its task lists, then the agents
-/// and the actor sessions, so they show without scrolling, then the kinds of
-/// resource it shows and the feeds, each a section that collapses. The iPad's
-/// and the Mac's sidebars both list this; what's around it is theirs.
+/// A sidebar's list, in the iPhone's tabs' order: Today and the task lists,
+/// then the agents and the actor sessions, so they show without scrolling,
+/// then the Library's pages, then the kinds of resource the workspace shows
+/// and the feeds, each a section that collapses. The iPad's and the Mac's
+/// sidebars both list this; what's around it is theirs.
 public struct SidebarSections: View {
     let folders: [TaskFolder]
     /// The workspace's saved task views, in their order.
@@ -134,12 +135,7 @@ public struct SidebarSections: View {
         WorkspaceSections(
             folders: folders,
             savedViews: savedViews,
-            feeds: nil,
-            kinds: kinds,
-            showsSources: false,
-            moveSavedViews: moveSavedViews,
-            moveKinds: moveKinds,
-            editKinds: editKinds
+            moveSavedViews: moveSavedViews
         ) { SidebarItem.page($0) }
         AgentSections(
             layout: .sidebar(newAgent: newAgent),
@@ -153,8 +149,8 @@ public struct SidebarSections: View {
         ) {
             SidebarItem.actorSession($0)
         }
-        // What comes into the workspace from elsewhere, after the agents and
-        // actors, so those show without scrolling.
+        LibrarySection { SidebarItem.page($0) }
+        // What comes into the workspace from elsewhere, last.
         WorkspaceSources(
             feeds: FeedSection(feeds: feeds, moveFeeds: moveFeeds, addFeed: addFeed) {
                 SidebarItem.page(.articles($0))
@@ -166,51 +162,27 @@ public struct SidebarSections: View {
     }
 }
 
-/// The workspace's pages, in the web's order: Dashboard, Today, Journal,
-/// Documents and Contacts, then its task lists, then unless `showsSources` is
-/// false its `WorkspaceSources`. The iPad's sidebar leads with them, and
-/// they're the iPhone's Workspace tab, whose Dashboard and feeds are tabs of
-/// their own; `link` makes each row's value.
+/// A sidebar's first section: Today, where the workspace opens (the
+/// Dashboard), then its task lists, as one Tasks row beside the iPad's sidebar
+/// (`tasksAreOneRow`) or a section of their own. Its other pages are the
+/// `LibrarySection`, after the agents and actors, as the iPhone's tabs order
+/// them; `link` makes each row's value.
 public struct WorkspaceSections<Link: Hashable>: View {
-    /// Whether the Dashboard has a row, which it doesn't with a tab of its own.
-    public let showsDashboard: Bool
     public let folders: [TaskFolder]
     /// The workspace's saved task views, in their order.
     public let savedViews: [SavedTaskView]
-    /// The feeds and what their section does; `nil` to leave them out.
-    public let feeds: FeedSection<Link>?
-    /// The kinds of resource the workspace shows, in their order.
-    public let kinds: [ConnectorKind]
-    /// Whether the connectors and feeds follow the pages, as on the
-    /// Workspace tab; a sidebar lists them after its agents instead.
-    public let showsSources: Bool
     public let moveSavedViews: (IndexSet, Int) -> Void
-    public let moveKinds: (IndexSet, Int) -> Void
-    /// Opens the choice of which kinds the workspace shows.
-    public let editKinds: () -> Void
     public let link: (WorkspacePage) -> Link
 
     public init(
-        showsDashboard: Bool = true,
         folders: [TaskFolder],
         savedViews: [SavedTaskView],
-        feeds: FeedSection<Link>?,
-        kinds: [ConnectorKind],
-        showsSources: Bool = true,
         moveSavedViews: @escaping (IndexSet, Int) -> Void,
-        moveKinds: @escaping (IndexSet, Int) -> Void,
-        editKinds: @escaping () -> Void,
         link: @escaping (WorkspacePage) -> Link
     ) {
-        self.showsDashboard = showsDashboard
         self.folders = folders
         self.savedViews = savedViews
-        self.feeds = feeds
-        self.kinds = kinds
-        self.showsSources = showsSources
         self.moveSavedViews = moveSavedViews
-        self.moveKinds = moveKinds
-        self.editKinds = editKinds
         self.link = link
     }
 
@@ -238,22 +210,9 @@ public struct WorkspaceSections<Link: Hashable>: View {
             isExpanded: isExpanded(.tasks),
             link: link
         ) {
-            if showsDashboard {
-                row(.dashboard, "Dashboard", systemImage: "rectangle.grid.1x2")
+            NavigationLink(value: link(.dashboard)) {
+                Label("Today", systemImage: "sun.max")
             }
-            row(.today, "Today", systemImage: "sun.max")
-            row(.journal, "Journal", systemImage: "book.closed")
-            row(.documents, "Documents", systemImage: "doc.text")
-            row(.contacts, "Contacts", systemImage: "person.crop.circle")
-        }
-        if showsSources {
-            WorkspaceSources(feeds: feeds, kinds: kinds, moveKinds: moveKinds, editKinds: editKinds, link: link)
-        }
-    }
-
-    private func row(_ page: WorkspacePage, _ title: String, systemImage: String) -> some View {
-        NavigationLink(value: link(page)) {
-            Label(title, systemImage: systemImage)
         }
     }
 
@@ -266,9 +225,33 @@ public struct WorkspaceSections<Link: Hashable>: View {
     }
 }
 
+/// What the workspace keeps, in a sidebar: Documents, Journal (today's entry
+/// first) and Contacts, as the iPhone's Library tab lists them.
+public struct LibrarySection<Link: Hashable>: View {
+    public let link: (WorkspacePage) -> Link
+
+    public init(link: @escaping (WorkspacePage) -> Link) {
+        self.link = link
+    }
+
+    public var body: some View {
+        Section("Library") {
+            row(.documents, "Documents", systemImage: "doc.text")
+            row(.journal, "Journal", systemImage: "book.closed")
+            row(.contacts, "Contacts", systemImage: "person.crop.circle")
+        }
+    }
+
+    private func row(_ page: WorkspacePage, _ title: String, systemImage: String) -> some View {
+        NavigationLink(value: link(page)) {
+            Label(title, systemImage: systemImage)
+        }
+    }
+}
+
 /// What comes into the workspace from elsewhere: the kinds of resource it
-/// shows, then the feeds, a section that collapses. The Workspace tab lists
-/// them after its pages; a sidebar after its agents and actors.
+/// shows, then the feeds, a section that collapses. A sidebar lists them
+/// last; the Library tab lists the kinds after its feeds.
 public struct WorkspaceSources<Link: Hashable>: View {
     /// The feeds and what their section does; `nil` to leave them out.
     public let feeds: FeedSection<Link>?
@@ -334,9 +317,8 @@ public struct WorkspaceSources<Link: Hashable>: View {
 
 }
 
-/// The workspace's pages, then its task lists: beside the iPad's sidebar one
-/// Tasks row after the pages, opening the list last open; elsewhere a section of
-/// their own. `#if`, as iOS decides by what's around the list and the Mac always
+/// Today, then the task lists: beside the iPad's sidebar one Tasks row after
+/// it, opening the list last open; elsewhere a section of their own. `#if`, as iOS decides by what's around the list and the Mac always
 /// lists them.
 private struct TaskSection<Link: Hashable, Pages: View>: View {
     let folders: [TaskFolder]
@@ -403,7 +385,7 @@ private struct TaskSection<Link: Hashable, Pages: View>: View {
 }
 
 /// Every feed together, then each, with their unread counts, then Add
-/// Feed: a section of the iPad's sidebar, and the iPhone's Feeds tab.
+/// Feed: a section of the iPad's sidebar, and of the iPhone's Library tab.
 public struct FeedSection<Link: Hashable>: View {
     public let feeds: [FeedSummary]
     public let moveFeeds: (IndexSet, Int) -> Void

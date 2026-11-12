@@ -4,38 +4,38 @@ import CohesionUI
 import SwiftUI
 import WidgetKit
 
-/// The iPhone's four tabs: the Dashboard first, where the app opens, then the
-/// agents and actor sessions, then the workspace's pages and the feeds, in the
-/// web's order.
+/// The iPhone's four tabs, in the order of what they're for: Today, the
+/// Dashboard, where the app opens; Tasks; Agents, the agents and actor
+/// sessions; and Library, what the workspace keeps and reads.
 enum RootTab: Hashable {
-    case dashboard
+    case today
+    case tasks
     /// The agents, then the actor sessions.
-    case intelligence
-    case workspace
-    case feeds
+    case agents
+    case library
 }
 
-/// What the Workspace tab pushes on iPhone: one of the workspace's pages, or a
-/// contact from its contacts.
+/// What the Tasks and Library tabs push on iPhone: one of the workspace's
+/// pages, or a contact from its contacts.
 enum WorkspaceRoute: Hashable {
     case page(WorkspacePage)
     case contact(Int)
 }
 
-/// What the Intelligence and Dashboard tabs push on iPhone: a conversation, or
-/// an actor session.
+/// What the Agents and Today tabs push on iPhone: a conversation, or an actor
+/// session.
 enum AgentsRoute: Hashable {
     case agent(Int)
     case actorSession(Int)
 }
 
-/// On iPhone, four tabs: the Dashboard, where the app opens, with no
-/// navigation bar; Intelligence, the agents and actor sessions; then, in the
-/// web's order, Workspace, whose first screen is the workspace's pages as the
-/// iPad's sidebar lists them, the Dashboard and feeds aside, and Feeds.
-/// Each pushes what's opened from it; an agent's chat, and an actor
-/// session's, hides the tab bar, so its composer is alone at the bottom. On
-/// iPad, two columns: the `Sidebar`, laid out as the web's, and whatever
+/// On iPhone, four tabs: Today, the Dashboard, where the app opens; Tasks, the
+/// task lists, reopening the list last open; Agents, the agents and actor
+/// sessions; and Library, the documents, journal, contacts, feeds and
+/// connectors. Each pushes what's opened from it; an agent's chat, and an actor
+/// session's, hides the tab bar, so its composer is alone at the bottom. Under
+/// the tabs, the `ActorsBar` says where the actor sessions stand and adds a
+/// task. On iPad, two columns: the `Sidebar`, in the tabs' order, and whatever
 /// is open from it. A window resized between the two keeps what it shows.
 struct RootView: View {
     @Environment(AppModel.self) private var model
@@ -44,14 +44,17 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var tab = RootTab.dashboard
-    /// What the Dashboard tab has opened from it, on iPhone.
-    @State private var dashboardPath: [AgentsRoute] = []
-    /// What the Workspace tab has open, on iPhone.
-    @State private var workspacePath: [WorkspaceRoute] = []
-    /// Whose articles the Feeds tab opens on, on iPhone: every feed's, or
-    /// one's, picked from its title menu.
-    @State private var feedFilter: ArticleListFilter = .allFeeds
+    @State private var tab = RootTab.today
+    /// What the Today tab has opened from it, on iPhone.
+    @State private var todayPath: [AgentsRoute] = []
+    /// What the Tasks tab has open over its lists, on iPhone: the list last
+    /// open, from launch.
+    @State private var tasksPath: [WorkspaceRoute] = []
+    /// Whether the Tasks tab has been put on the list last open, which it is
+    /// once, at launch.
+    @State private var hasOpenedTaskList = false
+    /// What the Library tab has open, on iPhone.
+    @State private var libraryPath: [WorkspaceRoute] = []
     /// The open conversation, on iPhone. Stored rather than derived for the
     /// stack, which a binding made afresh on each render unsettles under the
     /// open chat.
@@ -61,6 +64,8 @@ struct RootView: View {
     /// What's open beside the sidebar, on iPad.
     @State private var selection: SidebarItem?
     @State private var isShowingSettings = false
+    /// Whether the actor sessions' sheet, from the tab bar's accessory, is up.
+    @State private var isShowingSessions = false
     /// A task or document link from outside the app, for
     /// `presentsLinkedItems` to show over whatever is open.
     @State private var linkRequest: AppLink?
@@ -68,18 +73,21 @@ struct RootView: View {
     init() {}
 
     #if DEBUG
-    /// For `#Preview`s: open on `tab`, with `agentPath` pushed on the
-    /// Intelligence tab and `workspacePath` on the Workspace tab's; beside the
-    /// sidebar, on `selection`.
+    /// For `#Preview`s: open on `tab`, with `agentPath` pushed on the Agents
+    /// tab, `tasksPath` on the Tasks tab's and `libraryPath` on the Library
+    /// tab's; beside the sidebar, on `selection`.
     init(
-        previewTab tab: RootTab = .dashboard,
+        previewTab tab: RootTab = .today,
         agentPath: [AgentsRoute] = [],
-        workspacePath: [WorkspaceRoute] = [],
+        tasksPath: [WorkspaceRoute]? = nil,
+        libraryPath: [WorkspaceRoute] = [],
         selection: SidebarItem? = nil
     ) {
         _tab = State(initialValue: tab)
         _agentPath = State(initialValue: agentPath)
-        _workspacePath = State(initialValue: workspacePath)
+        _tasksPath = State(initialValue: tasksPath ?? [])
+        _hasOpenedTaskList = State(initialValue: tasksPath != nil)
+        _libraryPath = State(initialValue: libraryPath)
         _selection = State(initialValue: selection)
     }
     #endif
@@ -148,20 +156,25 @@ struct RootView: View {
             if let link = AppLink(url: url) { open(link) }
         }
         .onAppear {
-            // Side by side, an empty detail column is wasted; start on the Dashboard.
+            // Side by side, an empty detail column is wasted; start on Today.
             if sizeClass == .regular && selection == nil { selection = .page(.dashboard) }
+            // The Tasks tab opens on the list last open, over the lists.
+            if !hasOpenedTaskList {
+                hasOpenedTaskList = true
+                tasksPath = [.page(window.lastTaskPage)]
+            }
         }
         .onChange(of: sizeClass) { _, sizeClass in
             // A window resized between tabs and the sidebar keeps what it shows.
             if sizeClass == .compact { showInTabs() } else { showInSidebar() }
         }
         .onChange(of: window.selectedWorkspaceID) {
-            // The pages open belong to the workspace left; the feeds are every
-            // workspace's, so the Feeds tab stays. Beside a sidebar, a workspace
-            // opens on its Dashboard, as on the web; the Dashboard tab just
-            // shows the new one.
-            dashboardPath = []
-            workspacePath = []
+            // The pages open belong to the workspace left. Beside a sidebar, a
+            // workspace opens on Today, as on the web; the Today tab just
+            // shows the new one, and Tasks its lists.
+            todayPath = []
+            tasksPath = []
+            libraryPath = []
             contactPath = []
             window.lastTaskPage = .tasks(.inbox)
             switch selection {
@@ -174,8 +187,11 @@ struct RootView: View {
             // Opening a conversation marks it read.
             Task { await window.loadAgents() }
         }
-        .onChange(of: dashboardPath) {
+        .onChange(of: todayPath) {
             Task { await window.loadAgents() }
+        }
+        .onChange(of: tasksPath) {
+            if case .page(let page) = tasksPath.last, page.isTaskList { window.lastTaskPage = page }
         }
         .onChange(of: selection) {
             if case .page(let page) = selection, page.isTaskList { window.lastTaskPage = page }
@@ -193,7 +209,8 @@ struct RootView: View {
         .windowSheets(
             window,
             openFeed: { id in
-                feedFilter = .feed(id)
+                tab = .library
+                libraryPath = [.page(.articles(.feed(id)))]
                 selection = .page(.articles(.feed(id)))
             },
             openActorSession: open(sessionID:),
@@ -215,33 +232,54 @@ struct RootView: View {
 
     private var tabs: some View {
         TabView(selection: $tab) {
-            Tab("Dashboard", systemImage: "rectangle.grid.1x2", value: .dashboard) {
-                NavigationStack(path: $dashboardPath) {
+            Tab("Today", systemImage: "sun.max", value: .today) {
+                NavigationStack(path: $todayPath) {
                     page(.dashboard)
-                        // Its greeting heads it, under a bar with Settings
-                        // alone, as every tab's first screen has.
-                        .tabRootToolbar(showsWorkspaces: false)
+                        // Its greeting heads it, under a bar with the
+                        // workspace menu and Settings, as every tab's first
+                        // screen has.
+                        .tabRootToolbar()
                         .navigationDestination(for: AgentsRoute.self, destination: conversationDestination)
                 }
             }
-            Tab("Intelligence", systemImage: "sparkles.2", value: .intelligence) {
+            Tab("Tasks", systemImage: "checklist", value: .tasks) {
+                NavigationStack(path: $tasksPath) {
+                    TaskListsView(
+                        folders: window.folders,
+                        savedViews: window.savedViews,
+                        moveSavedViews: window.moveSavedViews
+                    ) { WorkspaceRoute.page($0) }
+                    .tabRootToolbar()
+                    .refreshable { await window.load(.asked) }
+                    .navigationDestination(for: WorkspaceRoute.self, destination: workspaceDestination)
+                }
+            }
+            Tab("Agents", systemImage: "sparkles.2", value: .agents) {
                 NavigationStack(path: $agentPath) {
                     agentList
                         .navigationDestination(for: AgentsRoute.self, destination: conversationDestination)
                 }
             }
             .badge(window.agents.count { $0.isUnread })
-            Tab("Workspace", systemImage: "square.grid.2x2", value: .workspace) {
-                NavigationStack(path: $workspacePath) {
-                    workspaceList
+            Tab("Library", systemImage: "books.vertical", value: .library) {
+                NavigationStack(path: $libraryPath) {
+                    library
                         .navigationDestination(for: WorkspaceRoute.self, destination: workspaceDestination)
                 }
             }
-            Tab("Feeds", systemImage: "dot.radiowaves.up.forward", value: .feeds) {
-                NavigationStack {
-                    feedRoot
-                }
-            }
+        }
+        // Out of the way while reading; back on scrolling up.
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .tabViewBottomAccessory {
+            ActorsBar(
+                sessions: window.actorSessions.current,
+                showSessions: { isShowingSessions = true },
+                newTask: { window.isAddingTask = true }
+            )
+        }
+        .sheet(isPresented: $isShowingSessions) {
+            ActorSessionsSheet(open: open(sessionID:))
+                .presentationDetents([.medium, .large])
         }
     }
 
@@ -269,45 +307,24 @@ struct RootView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// The workspace's pages, as the iPad's sidebar leads with them.
-    private var workspaceList: some View {
-        List {
-            WorkspaceSections(
-                // In a tab of its own, as are the feeds.
-                showsDashboard: false,
-                folders: window.folders,
-                savedViews: window.savedViews,
-                // In a tab of their own.
-                feeds: nil,
+    /// The Library tab's first screen: the recent documents, then the
+    /// workspace's other pages, the feeds and the connectors.
+    @ViewBuilder
+    private var library: some View {
+        if let workspace = window.selectedWorkspace {
+            LibraryView(
+                workspaceID: workspace.id,
+                feeds: window.feeds,
                 kinds: window.shownKinds,
-                moveSavedViews: window.moveSavedViews,
+                moveFeeds: window.moveFeeds,
+                addFeed: { window.isAddingFeed = true },
                 moveKinds: window.moveShownKinds,
                 editKinds: { window.isEditingKinds = true }
             ) { WorkspaceRoute.page($0) }
+            .id(workspace.id)
+            .tabRootToolbar()
+            .refreshable { await window.load(.asked) }
         }
-        .tabRootToolbar()
-        .refreshable { await window.load(.asked) }
-    }
-
-    /// Every feed together, then each, as the iPad's sidebar lists them.
-    /// The articles, as the web's Articles page opens on them: every feed's
-    /// newest first, or one feed's, picked from the title's menu, which also
-    /// adds a feed. The feeds' order is the iPad sidebar's to change.
-    private var feedRoot: some View {
-        page(.articles(feedFilter))
-            .id(feedFilter)
-            .titleMenu(window.title(of: feedFilter)) {
-                Picker("Feed", selection: $feedFilter) {
-                    Label("All Feeds", systemImage: "square.stack").tag(ArticleListFilter.allFeeds)
-                    ForEach(window.feeds) { feed in
-                        Text(feed.title).tag(ArticleListFilter.feed(feed.id))
-                    }
-                }
-                Section {
-                    Button("Add Feed…", systemImage: "plus") { window.isAddingFeed = true }
-                }
-            }
-            .tabRootToolbar(showsWorkspaces: false)
     }
 
     private var agentList: some View {
@@ -344,8 +361,8 @@ struct RootView: View {
                 }
             }
         }
-        // Titled large, as the Feeds tab is.
-        .navigationTitle("Intelligence")
+        // Titled large, as the Tasks and Library tabs are.
+        .navigationTitle("Agents")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu("New", systemImage: "plus") {
@@ -440,7 +457,7 @@ struct RootView: View {
         .id([AnyHashable(selection), AnyHashable(window.selectedWorkspaceID)])
     }
 
-    /// One of the workspace's pages: pushed in the Workspace tab on
+    /// One of the workspace's pages: pushed in the Tasks or Library tab on
     /// iPhone, beside the sidebar on iPad. A contact is pushed on the tab's
     /// stack on iPhone, by id on the detail's on iPad.
     @ViewBuilder
@@ -450,9 +467,9 @@ struct RootView: View {
                 page: page,
                 contactLink: { WorkspaceRoute.contact($0) },
                 openSavedView: open,
-                openPage: { workspacePath.append(.page($0)) },
-                openAgent: { dashboardPath.append(.agent($0)) },
-                openActorSession: { dashboardPath.append(.actorSession($0)) }
+                openPage: push(page:),
+                openAgent: { todayPath.append(.agent($0)) },
+                openActorSession: { todayPath.append(.actorSession($0)) }
             )
         } else {
             WorkspacePageView(
@@ -466,50 +483,66 @@ struct RootView: View {
         }
     }
 
+    /// Pushes another of the workspace's pages on its tab: a task list on
+    /// Tasks, any other page on Library.
+    private func push(page: WorkspacePage) {
+        if page.isTaskList {
+            tab = .tasks
+            tasksPath.append(.page(page))
+        } else {
+            tab = .library
+            libraryPath.append(.page(page))
+        }
+    }
+
     /// Opens in the tabs what the sidebar had open, as the window narrows.
     private func showInTabs() {
         switch selection {
         case .page(.dashboard):
-            tab = .dashboard
-            dashboardPath = []
+            tab = .today
+            todayPath = []
         case .page(.contacts):
-            tab = .workspace
-            workspacePath = [.page(.contacts)] + contactPath.map(WorkspaceRoute.contact)
-        case .page(.articles(let filter)):
-            tab = .feeds
-            feedFilter = filter
+            tab = .library
+            libraryPath = [.page(.contacts)] + contactPath.map(WorkspaceRoute.contact)
+        case .page(let page) where page.isTaskList:
+            tab = .tasks
+            tasksPath = [.page(page)]
         case .page(let page):
-            tab = .workspace
-            workspacePath = [.page(page)]
+            tab = .library
+            libraryPath = [.page(page)]
         case .agent(let id):
-            tab = .intelligence
+            tab = .agents
             agentPath = [.agent(id)]
         case .actorSession(let id):
-            tab = .intelligence
+            tab = .agents
             agentPath = [.actorSession(id)]
-        case nil: tab = .dashboard
+        case nil: tab = .today
         }
     }
 
     /// Opens beside the sidebar what the tabs had open, as the window widens.
     private func showInSidebar() {
         switch tab {
-        case .dashboard:
-            switch dashboardPath.last {
+        case .today:
+            switch todayPath.last {
             case .agent(let id): selection = .agent(id)
             case .actorSession(let id): selection = .actorSession(id)
             case nil: selection = .page(.dashboard)
             }
-        case .workspace:
-            switch workspacePath.last {
+        case .tasks:
+            switch tasksPath.last {
+            case .page(let page): selection = .page(page)
+            case .contact, nil: selection = .page(window.lastTaskPage)
+            }
+        case .library:
+            switch libraryPath.last {
             case .page(let page): selection = .page(page)
             case .contact:
                 selection = .page(.contacts)
-                contactPath = workspacePath.compactMap { if case .contact(let id) = $0 { id } else { nil } }
+                contactPath = libraryPath.compactMap { if case .contact(let id) = $0 { id } else { nil } }
             case nil: selection = .page(.dashboard)
             }
-        case .feeds: selection = .page(.articles(feedFilter))
-        case .intelligence:
+        case .agents:
             switch agentPath.last {
             case .agent(let id): selection = .agent(id)
             case .actorSession(let id): selection = .actorSession(id)
@@ -525,25 +558,20 @@ struct RootView: View {
     private var windowTitle: String {
         if sizeClass == .compact {
             switch tab {
-            case .dashboard:
-                switch dashboardPath.last {
+            case .today:
+                switch todayPath.last {
                 case .agent(let id): window.agentName(id)
                 case .actorSession(let id): window.actorSessionTitle(id)
-                case nil: "Dashboard"
+                case nil: "Today"
                 }
-            case .workspace:
-                switch workspacePath.last {
-                case .page(let page): window.title(of: page)
-                case .contact(let id): window.contactName(id)
-                case nil: window.selectedWorkspace?.displayName ?? "Cohesion"
-                }
-            case .feeds: window.title(of: feedFilter)
-            case .intelligence:
+            case .tasks: title(of: tasksPath.last) ?? "Tasks"
+            case .agents:
                 switch agentPath.last {
                 case .agent(let id): window.agentName(id)
                 case .actorSession(let id): window.actorSessionTitle(id)
-                case nil: "Intelligence"
+                case nil: "Agents"
                 }
+            case .library: title(of: libraryPath.last) ?? "Library"
             }
         } else {
             switch selection {
@@ -556,17 +584,27 @@ struct RootView: View {
         }
     }
 
-    /// Opens the Dashboard: its tab on iPhone, beside the sidebar on iPad.
+    /// What a page or contact pushed on a tab is titled.
+    private func title(of route: WorkspaceRoute?) -> String? {
+        switch route {
+        case .page(let page): window.title(of: page)
+        case .contact(let id): window.contactName(id)
+        case nil: nil
+        }
+    }
+
+    /// Opens Today, the Dashboard: its tab on iPhone, beside the sidebar on
+    /// iPad.
     private func showDashboard() {
-        tab = .dashboard
-        dashboardPath = []
+        tab = .today
+        todayPath = []
         selection = .page(.dashboard)
     }
 
-    /// Opens the agent's chat: in the Intelligence tab on iPhone, beside
-    /// the sidebar on iPad.
+    /// Opens the agent's chat: in the Agents tab on iPhone, beside the
+    /// sidebar on iPad.
     private func open(agentID id: Int) {
-        tab = .intelligence
+        tab = .agents
         agentPath = [.agent(id)]
         selection = .agent(id)
     }
@@ -591,26 +629,26 @@ struct RootView: View {
         }
     }
 
-    /// Opens the agents and actor sessions: the Intelligence tab's list on
-    /// iPhone; on iPad the sidebar already shows them.
+    /// Opens the agents and actor sessions: the Agents tab's list on iPhone;
+    /// on iPad the sidebar already shows them.
     private func openAgents() {
-        tab = .intelligence
+        tab = .agents
         agentPath = []
     }
 
-    /// Opens the session: in the Intelligence tab on iPhone, beside the
-    /// sidebar on iPad. One that's gone says so there.
+    /// Opens the session: in the Agents tab on iPhone, beside the sidebar on
+    /// iPad. One that's gone says so there.
     private func open(sessionID id: Int) {
-        tab = .intelligence
+        tab = .agents
         agentPath = [.actorSession(id)]
         selection = .actorSession(id)
     }
 
-    /// Opens the contact: on the Workspace tab's Contacts on iPhone, on the
+    /// Opens the contact: on the Library tab's Contacts on iPhone, on the
     /// Contacts list beside the sidebar on iPad.
     private func open(contactID id: Int) {
-        tab = .workspace
-        workspacePath = [.page(.contacts), .contact(id)]
+        tab = .library
+        libraryPath = [.page(.contacts), .contact(id)]
         contactPath = [id]
         selection = .page(.contacts)
     }
@@ -623,16 +661,13 @@ struct RootView: View {
     /// Opens a view just saved in place of the list it was saved from.
     private func open(_ view: SavedTaskView) {
         window.list(savedView: view)
-        workspacePath = [.page(.taskView(view.id))]
+        tasksPath = [.page(.taskView(view.id))]
         selection = .page(.taskView(view.id))
     }
 
     /// Closes what's open that the lists no longer hold: a deleted agent's
     /// conversation, contact, saved view or feed, and what's on top of them.
     private func closeWhatsGone() {
-        if case .feed(let id) = feedFilter, !window.feeds.contains(where: { $0.id == id }) {
-            feedFilter = .allFeeds
-        }
         switch window.lastTaskPage {
         case .tasks(.folder(let id)) where !window.folders.contains(where: { $0.id == id }),
              .taskView(let id) where !window.savedViews.contains(where: { $0.id == id }):
@@ -651,8 +686,11 @@ struct RootView: View {
             default: false
             }
         }
-        if let index = workspacePath.firstIndex(where: isGone) {
-            workspacePath.removeSubrange(index...)
+        if let index = tasksPath.firstIndex(where: isGone) {
+            tasksPath.removeSubrange(index...)
+        }
+        if let index = libraryPath.firstIndex(where: isGone) {
+            libraryPath.removeSubrange(index...)
         }
         if case .page(let page) = selection, isGone(.page(page)) {
             selection = .page(.dashboard)
@@ -660,8 +698,8 @@ struct RootView: View {
         if case .agent(let open) = agentPath.first, !window.agents.contains(where: { $0.id == open }) {
             agentPath = []
         }
-        if case .agent(let open) = dashboardPath.first, !window.agents.contains(where: { $0.id == open }) {
-            dashboardPath = []
+        if case .agent(let open) = todayPath.first, !window.agents.contains(where: { $0.id == open }) {
+            todayPath = []
         }
         if case .agent(let id) = selection, !window.agents.contains(where: { $0.id == id }) {
             selection = .page(.dashboard)
@@ -712,38 +750,6 @@ private struct HidesTabBar: UIViewControllerRepresentable {
     }
 }
 
-extension View {
-    /// A large title that opens `menu`: its name in a large title's type and
-    /// a chevron, at the bar's leading edge, since the system's large title
-    /// draws no chevron for a title menu. The navigation title stays for the
-    /// back button and VoiceOver; the bar doesn't draw it.
-    func titleMenu(_ title: String, @ViewBuilder menu: @escaping () -> some View) -> some View {
-        // Inline, so the bar draws no large title under this one, then
-        // without the inline title either.
-        navigationBarTitleDisplayMode(.inline)
-            .toolbar(removing: .title)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Menu(content: menu) {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(title)
-                                .font(.title.bold())
-                                .lineLimit(1)
-                            Image(systemName: "chevron.down")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
-                        .foregroundStyle(.primary)
-                        .fixedSize()
-                    }
-                    .accessibilityLabel(title)
-                    .accessibilityHint("Shows the menu")
-                }
-                .sharedBackgroundVisibility(.hidden)
-            }
-    }
-}
-
 extension EnvironmentValues {
     /// Whether the window shows settings, which any tab's first screen opens.
     @Entry var isShowingSettings: Binding<Bool>?
@@ -755,8 +761,9 @@ extension FocusedValues {
 }
 
 extension View {
-    /// The settings button on a tab's first screen, and for the Workspace
-    /// tab, the workspace's name as its title, which picks another.
+    /// A tab's first screen's bar: the workspace's menu at the leading edge,
+    /// which picks another, unless the tab isn't the workspace's, and Settings
+    /// at the trailing edge with the tab's other buttons.
     func tabRootToolbar(showsWorkspaces: Bool = true) -> some View {
         modifier(TabRootToolbar(showsWorkspaces: showsWorkspaces))
     }
@@ -771,25 +778,32 @@ private struct TabRootToolbar: ViewModifier {
 
     func body(content: Content) -> some View {
         @Bindable var window = window
+        let name = window.selectedWorkspace?.displayName ?? "Cohesion"
 
-        return Group {
+        return content.toolbar {
             if showsWorkspaces {
-                content
-                    .navigationTitle(window.selectedWorkspace?.displayName ?? "Cohesion")
-                    // Large, as every tab's first screen is, with a chevron
-                    // that opens the workspace menu.
-                    .titleMenu(window.selectedWorkspace?.displayName ?? "Cohesion") {
+                // Where a back button would be, since a tab's first screen has
+                // none, and the same on every tab that shows the workspace.
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
                         Picker("Workspace", selection: $window.selectedWorkspaceID) {
                             ForEach(model.workspaces) { workspace in
                                 Text(workspace.displayName).tag(Optional(workspace.id))
                             }
                         }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(name)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                            Image(systemName: "chevron.down")
+                                .font(.caption.weight(.bold))
+                        }
                     }
-            } else {
-                content
+                    .accessibilityLabel("Workspace")
+                    .accessibilityValue(name)
+                }
             }
-        }
-        .toolbar {
             // At the trailing edge with the tab's other buttons, where an
             // iOS app's account or settings button sits, not in the back
             // button's place.

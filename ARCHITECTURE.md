@@ -50,7 +50,7 @@ flowchart TD
 | Package › library | Folder under `Packages/` | What it is |
 | --- | --- | --- |
 | `CohesionCore` | `CohesionCore/Sources/CohesionCore/` | No UI: `Connection/`, `Models/`, `AppLink.swift`, `Intents/` (the App Intents of the controls, Shortcuts and the Tasks widget's rows that open the app, iOS only) and `PlatformImage` (`UIImage` or `NSImage`), which is all it knows of a platform. |
-| `CohesionUI` › `CohesionUI` | `CohesionUI/Sources/CohesionUI/` | Views anything can use: `AgentAvatar`, `ServiceIcon` and `SVGIcon`, `SymbolIcon` (a row's gradient and symbol), `Toast`, `errorAlert`, `ProtocolPresentation.swift` (the symbol and color of each value from the daemon) and `Platform.swift`. |
+| `CohesionUI` › `CohesionUI` | `CohesionUI/Sources/CohesionUI/` | Views anything can use: `AgentAvatar`, `ServiceIcon` and `SVGIcon`, `SymbolIcon` (a row's gradient and symbol), `StatusDots` (a grid of status dots, the Live Activity's and the iPhone tab bar's), `Toast`, `errorAlert`, `ProtocolPresentation.swift` (the symbol and color of each value from the daemon) and `Platform.swift`. |
 | `CohesionUI` › `CohesionMarkdown` | `CohesionUI/Sources/CohesionMarkdown/` | The Markdown parser, `MarkdownText`, `MarkdownEditor` (`UITextView` or `NSTextView`, one styler) and diagrams in a web view, which is why it's apart: the extensions don't link WebKit. |
 | `CohesionUI` › `CohesionScreens` | `CohesionUI/Sources/CohesionScreens/` | `AppModel`, `WindowModel`, every screen, and what a shell builds from: `WindowContent.swift`, `WorkspaceSections.swift`. |
 
@@ -135,11 +135,18 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   sets to what's open. The app's commands (Settings…, ⌘,) are in
   `CohesionApp.swift` and act on the focused window through
   `FocusedValues` that `RootView` sets.
-- `Cohesion/Views/RootView.swift`: the iPhone's four tabs (Dashboard, where it
-  opens, Intelligence, Workspace and Feeds) and the iPad's two columns (the sidebar and what's open). `Cohesion/Views/Sidebar.swift` is the iPad's sidebar around the
-  shared `SidebarSections` (`WorkspaceSections.swift`), in the web's order,
-  whose workspace part (`WorkspaceSections`) is also the Workspace tab's first
-  screen and whose feeds (`FeedSection`) are the Feeds tab's, and
+- `Cohesion/Views/RootView.swift`: the iPhone's four tabs (Today, the
+  Dashboard, where it opens; Tasks, on `Tasks/TaskListsView.swift`; Agents;
+  and Library, on `Library/LibraryView.swift`) with the workspace menu on each
+  first screen's bar (`tabRootToolbar`), and the iPad's two columns (the sidebar and what's open).
+  `Cohesion/Views/ActorsBar.swift` is the tab bar's accessory: the actor
+  sessions as `StatusDots` (`CohesionUI`, the Live Activity's dots too) and
+  their counts, opening them in a sheet, and New Task.
+  `Cohesion/Views/Sidebar.swift` is the iPad's sidebar around the
+  shared `SidebarSections` (`WorkspaceSections.swift`), in the tabs' order:
+  Today and Tasks (`WorkspaceSections`), the agents and actors, the Library's
+  pages (`LibrarySection`), then the connectors and feeds (`WorkspaceSources`,
+  whose `FeedSection` the Library tab lists too), and
   `Agents/AgentRows.swift` the agents' rows and menus both lists share, with
   `AgentSections`, one section in every shell, whose layout (`AgentSectionLayout`)
   says whether it collapses (only in a sidebar), whether it lists the pinned (a
@@ -178,7 +185,7 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   what paragraph break it needs, then adds the note with `appendToJournal`.
   `WhatsNewSection` lists the window's `actorSessions` and `agents`, so it follows
   their watches; its rows open through `WorkspacePageView`'s `openAgent` and
-  `openActorSession`, which push on the Dashboard tab's stack on iPhone and select
+  `openActorSession`, which push on the Today tab's stack on iPhone and select
   in a sidebar. Dashboard (⇧⌘D) is a command on iPad and the Mac
   (`\.showDashboard`).
 - `Agents/Forwarding.swift`: "Forward" in a task's, document's
@@ -231,7 +238,7 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   list, and `/` offers nothing.
 - `Actors/ActorUsageView.swift`: the actors' plan usage, in a sheet
   from Actor Usage in the navigation bar's overflow menu (`ActorUsageMenu`,
-  on the Intelligence tab and the iPad's and the Mac's sidebars), as the web's Actors
+  on the Agents tab and the iPad's and the Mac's sidebars), as the web's Actors
   page lists it: one section a `listActorUsage` pool (an account several
   actors share, or one actor's own limits): its limits, with where its
   actors work, comma-joined, in the footer. `WindowModel` keeps the usage, reloading on
@@ -276,7 +283,7 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   on its own above a composer goes through it too.
 - `Contacts/`: a workspace's contacts. `WindowModel` loads them
   (`listContacts`, reloaded on `contacts(<workspace>)`) for the Contacts
-  page of the Workspace tab and the sidebars, filtered by name as the web filters
+  page of the Library tab and the sidebars, filtered by name as the web filters
   them; `ContactView` shows one from that list, with Message, Call and
   FaceTime (`sms:`, `tel:`, `facetime:`) for its phone numbers and Email
   (`mailto:`) for its addresses, a menu of the numbers when it has
@@ -353,7 +360,7 @@ the first needing the user; workspace 1, Studio), dated from now.
 `CohesionScreens`' `Previews/PreviewSupport.swift` put a screen in a window of
 it; `Previews/ScreenPreviews.swift` previews the sheets and pages, and
 `Cohesion/Previews/ShellPreviews.swift` the iOS shell, its tabs, pushes and
-the iPad's split view (`RootView(previewTab:agentPath:workspacePath:selection:)`).
+the iPad's split view (`RootView(previewTab:agentPath:tasksPath:libraryPath:selection:)`).
 A package's preview can't read the app's asset catalog, so `PreviewWindow` tints
 with `Color.previewAccent`, `AccentColor`'s values. `design-review/` keeps the
 screenshots and reviews of each design round taken from these.

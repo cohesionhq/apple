@@ -136,7 +136,7 @@ public final class WindowModel {
 
     public func title(of page: WorkspacePage) -> String {
         switch page {
-        case .dashboard: "Dashboard"
+        case .dashboard: "Today"
         case .today: "Today"
         case .journal: "Journal"
         case .documents: "Documents"

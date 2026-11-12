@@ -27,11 +27,12 @@ the sections below and the linked docs say how.
   the kind is new, and the view watching it with `changes(matching:)` (§4).
 - [ ] **Every navigation**, in `Cohesion/Views/RootView.swift`,
   `CohesionMac/MacRootView.swift` and `CohesionScreens/WorkspaceSections.swift`:
-  a workspace page is a `WorkspacePage` listed in `WorkspaceSections`, built in
-  `WorkspacePageView`, which is the iPad's and the Mac's sidebars and the
-  iPhone's Workspace tab (the feeds are the Feeds tab's `FeedSection`); an
+  a workspace page is a `WorkspacePage`, built in `WorkspacePageView`, listed
+  in the sidebars (`SidebarSections`: `WorkspaceSections` for the task lists,
+  `LibrarySection` and `WorkspaceSources` for the rest) and on the iPhone's
+  tab for it (`TaskListsView` on Tasks, `LibraryView` on Library); an
   agent or actor screen is a `SidebarItem` on iPad and the Mac and an
-  `AgentsRoute` pushed from the Intelligence tab. A screen on one only is a
+  `AgentsRoute` pushed from the Agents tab. A screen on one only is a
   bug, and a new screen never adds a fifth tab (§5).
 - [ ] **The Mac**: the screen builds and makes sense there. A sheet is
   `sizedSheet`; what iOS alone has goes through `Platform.swift` or
@@ -153,7 +154,8 @@ iPad's sidebar in `Cohesion/Views/RootView.swift` (`RootTab`,
 which carry what's open across a resize), the Mac's in
 `CohesionMac/MacRootView.swift`, and what they share in
 `CohesionScreens/WorkspaceSections.swift` (`WorkspacePage`, `SidebarItem`,
-`WorkspaceSections`, `SidebarSections`, `FeedSection`) and `WorkspacePageView`.
+`WorkspaceSections`, `LibrarySection`, `SidebarSections`, `FeedSection`), the
+iPhone's `TaskListsView` and `LibraryView`, and `WorkspacePageView`.
 `RootView` picks tabs in a compact width and the sidebar otherwise, so an iPad
 in Split View shows the tabs: check both.
 Show errors with `.errorAlert($error)`, through `LoadOrigin` for a load: only

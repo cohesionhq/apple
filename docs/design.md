@@ -43,14 +43,19 @@ where this page says. Direction: the apps' surface and the goal's
 ## Layout: iPhone and iPad
 
 `RootView` shows tabs in a compact width and two columns otherwise. Both
-follow the order of the web's sidebar (the workspace's pages, then the
-agents, then the actors), leaving out what the apps have no screen for:
+are in one order, by what each part is for: Today, Tasks, the agents and the
+actors, then the Library, leaving out what the apps have no screen for:
 
 - **iPhone (and a narrow iPad window)**: four tabs (`RootTab`).
-  **Dashboard** (`rectangle.grid.1x2`) comes first and is picked at launch:
-  its bar has no title, its greeting heading it, and Settings; it pushes the
-  chats and sessions its rows open. The workspace menu is on Workspace's.
-  Then **Intelligence** (`sparkles.2`), titled large as Feeds is:
+  **Today** (`sun.max`), the Dashboard, comes first and is picked at launch:
+  its bar has no title, its greeting heading it; it pushes the chats and
+  sessions its rows open. Then **Tasks** (`checklist`), titled large, whose
+  first screen is the task lists (`TaskListsView`): the inbox and folders,
+  then Views (All, Done, Cancelled, the saved views), each a page's row with
+  its `SymbolIcon`, pushing the list (`WorkspaceRoute`) with a plain inline
+  title and no title menu. The tab opens at launch on the list last open in the
+  window (`lastTaskPage`, the inbox at first) over the lists, and on the lists
+  on switching workspace. Then **Agents** (`sparkles.2`), titled large:
   it lists the pinned agents as a grid, four across, then the sidebar's one section without
   them (each team's, then those on no team, a row's team as its subline), which doesn't
   collapse, and whose section action, Teams, renames or deletes a team, as the
@@ -58,34 +63,41 @@ agents, then the actors), leaving out what the apps have no screen for:
   the current actor sessions, pushing a chat or a transcript (`AgentsRoute`),
   which hides the tab bar; while some actor reports its plan, the
   navigation bar's overflow menu (`ellipsis`) holds Actor Usage, a sheet.
-  Then, in the web's order, **Workspace**,
-  titled large with the workspace's name, whose menu picks another (the name
-  and a chevron at the bar's leading edge, `titleMenu`, since the system's
-  large title draws no chevron for a title menu; Feeds' title is the same); its
-  first screen is the sidebar's workspace part, the same
-  `WorkspaceSections` without the Dashboard or feeds: Today, Journal, Documents,
-  Contacts, then Tasks, then Connectors (the kinds of resource the workspace
-  shows, then Edit…), each row pushing its page (`WorkspaceRoute`). And
-  **Feeds**, which opens on the articles, as the web's Articles page does:
-  every feed's, titled All Feeds, or one feed's, picked from the title's
-  menu, which also adds a feed; an article pushes the reader. The feeds'
-  order is the iPad sidebar's to change. Every tab's first screen has a
-  large title (the Dashboard's is its greeting) and Settings at the
-  trailing edge with its other buttons (`tabRootToolbar`); every pushed
-  screen's title is inline (leading beside a list's buttons, as the system
-  sets it).
-  - **A new screen joins one of these tabs**, never a fifth: a
-    workspace page is a row in `WorkspaceSections` (so the iPad's sidebar
-    gets it too), a feed screen is pushed from Feeds, an agent or actor
-    screen from Intelligence.
+  Then **Library** (`books.vertical`), titled large (`LibraryView`): the
+  documents changed last as cards in a row that scrolls edge to edge, then
+  Documents, Journal (today's entry first) and Contacts, each with its
+  `SymbolIcon`, then Feeds (`FeedSection`: All Feeds, each feed, Add Feed),
+  then Connectors (the kinds of resource the workspace shows, then Edit…),
+  each row pushing its page (`WorkspaceRoute`); a card pushes its document.
+  Every tab's first screen has, at its bar's leading edge, the workspace's
+  name with its emoji and a chevron, a menu that picks another (Agents,
+  whose list is the whole server's, has none), and Settings at the trailing
+  edge with its other buttons (`tabRootToolbar`); every first screen but
+  Today's has a large title, and every pushed screen's title is inline
+  (leading beside a list's buttons, as the system sets it). The tab bar
+  collapses on scrolling down (`tabBarMinimizeBehavior(.onScrollDown)`).
+  - **Under the tabs, the `ActorsBar`** (the tab bar's bottom accessory) says
+    where the actor sessions stand: a dot per session in its status's tint,
+    the most pressing first (`StatusDots`, the Live Activity's own dots), and
+    the counts but done's in the vocabulary's words ("1 needs you, 1
+    working"), "All done" once every session is done, or "No sessions". It
+    opens the sessions in a sheet, from which a session opens on the Agents
+    tab, closing the sheet. Its trailing **+** is New Task, so a task is
+    captured from any tab. Beside the collapsed tab bar it names only the most
+    pressing count.
+  - **A new screen joins one of these tabs**, never a fifth: a task list is
+    a row in `TaskListsView` and a page of the workspace's a row in
+    `LibraryView`, each also in the iPad's sidebar (`SidebarSections`), and an
+    agent or actor screen is pushed from Agents.
 - **iPad**: a two-column `NavigationSplitView`, balanced so the sidebar
   stays beside the detail in portrait too. The sidebar (`Sidebar`) is
   headed by the workspace's name, whose title menu picks another, and
-  lists Dashboard, Today, Journal, Documents, Contacts and Tasks; then Agents,
+  lists, in the tabs' order, Today (the Dashboard) and Tasks; then Agents,
   one section (pinned first, then each team's, then those on no team, a row's
   team as its subline; New Agent and Teams, which renames or deletes a team, are
   section actions) and Actors (the current sessions; New Session is a section
-  action), so the app's core shows without scrolling; then Connectors, the kinds
+  action), so the app's core shows without scrolling; then Library
+  (Documents, Journal and Contacts); then Connectors, the kinds
   of resource the workspace shows (each by its connector's icon, named with
   its connector where two connectors' kinds share a name), then Edit…; then
   Feeds, a section that collapses and lists what the web's Articles page lists
@@ -97,7 +109,7 @@ agents, then the actors), leaving out what the apps have no screen for:
   item in that overflow menu), with
   the connection's dot only while the connection isn't healthy, as on the
   iPhone's Settings button. The detail shows what's selected
-  (`SidebarItem`), the Dashboard at launch and on switching workspace; Contacts opens the list, which pushes
+  (`SidebarItem`), Today at launch and on switching workspace; Contacts opens the list, which pushes
   a contact. Pushes zoom from their source (`zoomsOnIPad`).
   - Tasks is one row (`TaskSection`), to leave the list room, which opens the
     list last open in the window, or the inbox on launch or on switching
@@ -186,8 +198,8 @@ edge, over its status and how long ago it changed ("Needs you · 5m"), or for an
 agent "New message · 5m" ("now" under a minute, or for a time ahead of this
 device's clock). Each section's heading carries its count. What's listed is the
 daemon's status and unread state, across the whole server as sessions and agents
-are. A row opens the session or chat: pushed on the Dashboard tab's own
-stack on iPhone (`dashboardPath`), so back returns here; selected beside the
+are. A row opens the session or chat: pushed on the Today tab's own
+stack on iPhone (`todayPath`), so back returns here; selected beside the
 sidebar on iPad and the Mac.
 
 ## Layout: the Mac
@@ -286,7 +298,7 @@ One quiet sign: a soft light sweeping across text (`workingShimmer`) at the web'
 pace: every 2.5 seconds a band with no hard edge, 60% of the text's width, crosses
 in 0.9 seconds, slowing as it goes, the text dimmed between sweeps. Every shimmer
 takes its phase from the time, so all on screen are in step. Its name shimmers
-in the Intelligence tab's rows and pinned grid and in the sidebar; the foot of its chat is a caption,
+in the Agents tab's rows and pinned grid and in the sidebar; the foot of its chat is a caption,
 where its reply's caption will land, and that shimmers. The caption says what the daemon's `activity` says, as the daemon
 words it, or "Working…" when that's empty or hasn't come yet, as while a message
 is on its way. New words fade in over the old on its one line, so nothing moves.
@@ -300,7 +312,7 @@ Motion the text is plain, with nothing in its place.
 Widgets can't animate and don't shimmer.
 
 An actor session works the same way. Its row's title, in the sidebar and on the
-Intelligence tab, shimmers, with no leading icon; its status sits in the subtitle. The foot of its transcript is the same caption, its dot the accent
+Agents tab, shimmers, with no leading icon; its status sits in the subtitle. The foot of its transcript is the same caption, its dot the accent
 since a session has no color of its own; the header's title stays still. A
 session has a status rather than an activity, so its caption always says
 "Working…".

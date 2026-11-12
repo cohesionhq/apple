@@ -46,10 +46,10 @@ struct ActivitiesLiveActivity: Widget {
             Mark(size: 20)
                 .padding(4)
         } compactTrailing: {
-            StatusDots(state: state)
+            ActivityDots(state: state)
                 .padding(4)
         } minimal: {
-            StatusDots(state: state)
+            ActivityDots(state: state)
         }
     }
 }
@@ -158,47 +158,16 @@ private struct SegmentBar: View {
 }
 
 /// A dot for each activity in the counts, in its status's tint and the
-/// counts' order, filling a square grid row by row: 2×2 up to four, then
-/// 3×3, the most pressing first beyond nine. The grid stays square: slots
-/// past the last activity, and all four while there are none, are faint
-/// hollow rings.
-private struct StatusDots: View {
+/// counts' order (`StatusDots`, as the app's tab bar draws its actor
+/// sessions), with white rings for the island's black.
+private struct ActivityDots: View {
     let state: CohesionActivitiesAttributes.ContentState
-    var side: CGFloat = 20
-
-    /// The most dots the grid holds, 3×3.
-    private static let capacity = 9
-
-    /// Each dot's status, the most pressing first, at most `capacity`.
-    private var dots: [ActivityStatus] {
-        Array(state.counts.flatMap { repeatElement($0.status, count: $0.count) }.prefix(Self.capacity))
-    }
 
     var body: some View {
-        let dots = dots
-        let columns = dots.count > 4 ? 3 : 2
-        let spacing = side * 0.1
-        let diameter = (side - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-        Grid(horizontalSpacing: spacing, verticalSpacing: spacing) {
-            ForEach(0..<columns, id: \.self) { row in
-                GridRow {
-                    ForEach(0..<columns, id: \.self) { column in
-                        let index = row * columns + column
-                        Group {
-                            if index < dots.count {
-                                Circle().fill(dots[index].tint)
-                            } else {
-                                // Hollow, so an empty slot never reads as done's grey.
-                                Circle().strokeBorder(.white.opacity(0.3), lineWidth: 1)
-                            }
-                        }
-                        .frame(width: diameter, height: diameter)
-                    }
-                }
-            }
-        }
-        .frame(width: side, height: side)
-        .accessibilityElement(children: .ignore)
+        StatusDots(
+            tints: state.counts.flatMap { repeatElement($0.status.tint, count: $0.count) },
+            ring: .white.opacity(0.3)
+        )
         .accessibilityLabel(state.counts.map { "\($0.count) \($0.status.countLabel)" }.formatted(.list(type: .and)))
     }
 }

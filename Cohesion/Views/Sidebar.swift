@@ -3,10 +3,10 @@ import CohesionScreens
 import CohesionUI
 import SwiftUI
 
-/// The iPad's sidebar: the workspace's pages (Dashboard, Today, Journal,
-/// Documents, Contacts) with one Tasks row after them, then the agents and the
-/// actor sessions, then the kinds of resource it shows and the feeds, each a
-/// section that collapses, with Settings in its bar. The workspace's name
+/// The iPad's sidebar, in the iPhone's tabs' order: Today and one Tasks row,
+/// then the agents and the actor sessions, then the Library (Documents,
+/// Journal, Contacts), then the kinds of resource it shows and the feeds, each
+/// a section that collapses, with Settings in its bar. The workspace's name
 /// heads it, and picks another.
 struct Sidebar: View {
     @Binding var selection: SidebarItem?
@@ -126,27 +126,6 @@ struct Sidebar: View {
         .listStyle(.sidebar)
     }
     .environment(\.tasksAreOneRow, true)
-    .environment(app)
-    .environment(WindowModel(app: app, workspaceID: nil))
-}
-
-#Preview("Workspace Tab") {
-    let app = AppModel()
-
-    NavigationStack {
-        List {
-            WorkspaceSections(
-                folders: [TaskFolder(id: 1, title: "Home"), TaskFolder(id: 2, title: "Work")],
-                savedViews: [],
-                feeds: nil,
-                kinds: [],
-                moveSavedViews: { _, _ in },
-                moveKinds: { _, _ in },
-                editKinds: {}
-            ) { $0 }
-        }
-        .tabRootToolbar()
-    }
     .environment(app)
     .environment(WindowModel(app: app, workspaceID: nil))
 }
