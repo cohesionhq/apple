@@ -59,9 +59,9 @@ actors, then the Library, leaving out what the apps have no screen for:
   it lists the pinned agents as a grid, four across, then the sidebar's one section without
   them (each team's, then those on no team, a row's team as its subline), which doesn't
   collapse, and whose section action, Teams, renames or deletes a team, as the
-  sidebar's does; then
-  the current actor sessions, pushing a chat or a transcript (`AgentsRoute`),
-  which hides the tab bar; while some actor reports its plan, the
+  sidebar's does, pushing a chat (`AgentsRoute`), which hides the tab bar.
+  It doesn't list the actor sessions: the `ActorsBar` below is their one way
+  in on iPhone, though a session it opens pushes its transcript here; while some actor reports its plan, the
   navigation bar's overflow menu (`ellipsis`) holds Actor Usage, a sheet.
   Then **Library** (`books.vertical`), titled large (`LibraryView`): the
   documents changed last as cards in a row that scrolls edge to edge, then
@@ -311,8 +311,8 @@ is in step with it, and that fork's sheet ends in the same caption. Under Reduce
 Motion the text is plain, with nothing in its place.
 Widgets can't animate and don't shimmer.
 
-An actor session works the same way. Its row's title, in the sidebar and on the
-Agents tab, shimmers, with no leading icon; its status sits in the subtitle. The foot of its transcript is the same caption, its dot the accent
+An actor session works the same way. Its row's title, in the sidebar and in the
+`ActorsBar`'s sheet, shimmers, with no leading icon; its status sits in the subtitle. The foot of its transcript is the same caption, its dot the accent
 since a session has no color of its own; the header's title stays still. A
 session has a status rather than an activity, so its caption always says
 "Working…".

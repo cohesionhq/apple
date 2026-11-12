@@ -82,9 +82,10 @@ struct ActorsBar: View {
     }
 }
 
-/// What the bar opens: the current sessions, as the Agents tab lists them, with
-/// New Session. A session opens where the Agents tab pushes it, closing the
-/// sheet, since a transcript is full-page content.
+/// What the bar opens: the current sessions, the iPhone's one list of them
+/// (the Agents tab lists only agents), with New Session. A session opens
+/// where the Agents tab pushes it, closing the sheet, since a transcript is
+/// full-page content.
 struct ActorSessionsSheet: View {
     let open: (Int) -> Void
 

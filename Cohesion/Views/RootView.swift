@@ -350,10 +350,9 @@ struct RootView: View {
                 teams: window.teams,
                 actions: window.agentActions
             ) { AgentsRoute.agent($0.id) }
-            ActorSessionsSection(actors: window.actors, sessions: window.actorSessions, resolve: window.resolve) { AgentsRoute.actorSession($0) }
         }
         .overlay {
-            if window.agents.isEmpty && window.actors.isEmpty && window.actorSessions.isEmpty {
+            if window.agents.isEmpty {
                 ContentUnavailableView {
                     Label("No Agents", systemImage: "bubble.left.and.bubble.right")
                 } actions: {
@@ -629,8 +628,9 @@ struct RootView: View {
         }
     }
 
-    /// Opens the agents and actor sessions: the Agents tab's list on iPhone;
-    /// on iPad the sidebar already shows them.
+    /// Opens the agents and actor sessions: the Agents tab's list on iPhone,
+    /// whose sessions are under the tabs (`ActorsBar`); on iPad the sidebar
+    /// already shows them.
     private func openAgents() {
         tab = .agents
         agentPath = []
