@@ -1022,20 +1022,24 @@ private struct Source: Equatable {
 }
 
 /// The chat's header: the agent's avatar, to be raised into the navigation
-/// bar so it tops out level with the back button, just over `HeaderPill`. Tapping either opens the agent's info.
+/// bar so it tops out level with the back button, its foot overlapping the
+/// top of `HeaderPill` as Messages draws a contact. Tapping either opens the
+/// agent's info.
 private struct ChatHeader: View {
     let agent: Agent
     let showInfo: () -> Void
 
     var body: some View {
-        VStack(spacing: 2) {
+        // The avatar's foot overlaps the pill by its top padding, so the
+        // disc sits over the glass but clear of the name.
+        VStack(spacing: -6) {
             Button(action: showInfo) {
                 AgentAvatar(agent: agent, diameter: 48)
             }
             .buttonStyle(.plain)
             // `HeaderPill` speaks for the header.
             .accessibilityHidden(true)
-            // Over the pill's edge, clear of its name.
+            // In front of the pill it overlaps.
             .zIndex(1)
             HeaderPill(agent: agent, showInfo: showInfo)
         }
