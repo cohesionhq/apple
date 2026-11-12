@@ -533,9 +533,9 @@ final class PushRegistration: PairingObserver {
 
     /// Ends Live Activities left behind, as when their end push never came,
     /// so they don't hold one of the few slots iOS allows: one past its
-    /// stale date, all but the latest heard from when there are several,
-    /// and one with nothing left going whose last activity finished well
-    /// past the five minutes after which the cloud ends it.
+    /// stale date, and all but the latest heard from when there are several.
+    /// One showing only done or failed activities stays, since those show
+    /// until they're resolved.
     private func sweepStaleActivities() {
         let activities = Activity<CohesionActivitiesAttributes>.activities
         let active = activities.filter { $0.activityState == .active }
@@ -547,10 +547,6 @@ final class PushRegistration: PairingObserver {
                 dismissal = .immediate
             case .active where activity.id != latest:
                 dismissal = .immediate
-            case .active where activity.content.state.isLeftBehind:
-                // Its last word stays on the Lock Screen a while, as an end
-                // push would have left it.
-                dismissal = .default
             default:
                 dismissal = nil
             }
@@ -680,20 +676,6 @@ private extension CohesionActivitiesAttributes.ContentState {
     /// The latest start or finish it lists, in Unix seconds.
     var lastHeard: Int {
         activities.flatMap { [$0.startedAt, $0.finishedAt].compactMap(\.self) }.max() ?? 0
-    }
-
-    /// Whether the cloud should have ended it: nothing is going, and nothing
-    /// listed finished in the last quarter hour, three times the five minutes
-    /// the cloud keeps a finished activity, so a late end push wins.
-    var isLeftBehind: Bool {
-        guard runningCount == 0, needsAttentionCount == 0,
-              activities.allSatisfy(\.status.hasEnded)
-        else { return false }
-        let finishes = activities.map(\.finishedAt)
-        // A cloud that sends no finish times leaves nothing to judge by.
-        if finishes.contains(nil) { return false }
-        let latest = finishes.compactMap(\.self).max() ?? 0
-        return Date.now.timeIntervalSince1970 - TimeInterval(latest) > 15 * 60
     }
 }
 

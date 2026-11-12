@@ -477,7 +477,7 @@ public struct ActorSessionsSection<Link: Hashable>: View {
         if actors.isEmpty {
             Text("No actors ready")
                 .foregroundStyle(.secondary)
-        } else if sessions.isEmpty {
+        } else if current.isEmpty {
             Text("No sessions yet.")
                 .foregroundStyle(.secondary)
         }

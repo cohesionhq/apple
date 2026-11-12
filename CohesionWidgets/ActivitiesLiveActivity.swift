@@ -11,15 +11,15 @@ struct ActivitiesLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CohesionActivitiesAttributes.self) { context in
             Banner(state: context.state)
-                .widgetURL(context.state.lead(at: .now)?.kind.link?.url)
+                .widgetURL(context.state.lead?.kind.link?.url)
         } dynamicIsland: { context in
             island(context.state)
-                .widgetURL(context.state.lead(at: .now)?.kind.link?.url)
+                .widgetURL(context.state.lead?.kind.link?.url)
         }
     }
 
     private func island(_ state: CohesionActivitiesAttributes.ContentState) -> DynamicIsland {
-        let shown = state.shown(at: .now)
+        let shown = state.shown
         return DynamicIsland {
             DynamicIslandExpandedRegion(.leading) {
                 Mark(size: 20)
@@ -62,9 +62,8 @@ private struct Banner: View {
     let state: CohesionActivitiesAttributes.ContentState
 
     var body: some View {
-        let now = Date.now
-        let shown = state.shown(at: now).prefix(3)
-        let more = state.moreCount(beyond: shown.count, at: now)
+        let shown = state.shown.prefix(3)
+        let more = max(0, state.totalCount - shown.count)
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Mark(size: 18)
@@ -221,10 +220,11 @@ private extension CohesionActivitiesAttributes.ContentState {
         .filter { $0.count > 0 }
     }
 
-    /// The activities to show at `now`, in the cloud's order, sorted again
-    /// in case a cloud sends them otherwise, without any that aged out.
-    func shown(at now: Date) -> [CohesionActivitiesAttributes.Summary] {
-        activities.filter { !$0.hasAgedOut(at: now) }
+    /// The activities to show: every one the cloud lists, done and failed
+    /// included until resolved, as the app's `current` sessions; in the
+    /// cloud's order, sorted again in case a cloud sends them otherwise.
+    var shown: [CohesionActivitiesAttributes.Summary] {
+        activities
             .enumerated()
             .sorted { a, b in
                 if a.element.rank != b.element.rank { return a.element.rank < b.element.rank }
@@ -236,14 +236,7 @@ private extension CohesionActivitiesAttributes.ContentState {
     }
 
     /// The activity the Live Activity leads with, and that tapping opens.
-    func lead(at now: Date) -> CohesionActivitiesAttributes.Summary? { shown(at: now).first }
-
-    /// How many the counts cover beyond the `shown` rows, less those that
-    /// aged out here.
-    func moreCount(beyond shown: Int, at now: Date) -> Int {
-        let agedOut = activities.count(where: { $0.hasAgedOut(at: now) })
-        return max(0, totalCount - agedOut - shown)
-    }
+    var lead: CohesionActivitiesAttributes.Summary? { shown.first }
 }
 
 private extension ActivityStatus {
@@ -261,13 +254,6 @@ private extension ActivityStatus {
 private extension CohesionActivitiesAttributes.Summary {
     /// Whether it succeeded or was cancelled, and so shows dimmed.
     var isFinished: Bool { status == .succeeded || status == .cancelled }
-
-    /// Whether it ended more than five minutes before `now`, when the cloud
-    /// drops it; hidden here too in case that push comes late.
-    func hasAgedOut(at now: Date) -> Bool {
-        guard status.hasEnded, let finishDate else { return false }
-        return now.timeIntervalSince(finishDate) > 5 * 60
-    }
 
     /// Where it sorts: needing the user, failed, going, then finished.
     var rank: Int {

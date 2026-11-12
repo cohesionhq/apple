@@ -112,11 +112,12 @@ public struct ActorSession: Decodable, Identifiable, Hashable {
 }
 
 extension [ActorSession] {
-    /// What the sidebar lists, as the web's does: every session cohesiond
-    /// lists, which leaves the resolved out, by `sidebarRank`, then in
-    /// cohesiond's order.
+    /// The sessions the Actors list, the floating bar and the Live Activity
+    /// show: every one not resolved, done and failed included, however long
+    /// ago it ended; by `sidebarRank`, then in cohesiond's order.
     public var current: [ActorSession] {
-        enumerated()
+        filter { $0.status != .resolved }
+            .enumerated()
             .sorted { ($0.element.sidebarRank, $0.offset) < ($1.element.sidebarRank, $1.offset) }
             .map(\.element)
     }
