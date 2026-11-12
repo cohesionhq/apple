@@ -30,7 +30,7 @@ public struct TaskListsView<Link: Hashable>: View {
             Section {
                 row(.tasks(.inbox), "Inbox", systemImage: "tray.fill", color: .blue)
                 ForEach(folders) { folder in
-                    row(.tasks(.folder(folder.id)), folder.title, systemImage: "folder.fill", color: .indigo)
+                    row(.tasks(.folder(folder.id)), folder.title, systemImage: "folder.fill", color: folder.iconColor)
                 }
             }
             Section("Views") {

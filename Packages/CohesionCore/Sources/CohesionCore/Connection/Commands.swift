@@ -114,6 +114,15 @@ extension CohesionClient {
         keptReply("listTaskFolders", ["workspace_id": workspaceID])
     }
 
+    /// Colors the folder's icon, or clears its color when `color` is `nil`.
+    public func setColor(of folder: TaskFolder, to color: AgentColor?, in workspaceID: Int) async throws -> TaskFolder {
+        try await call("setTaskFolderColor", [
+            "workspace_id": workspaceID,
+            "folder_id": folder.id,
+            "color": color?.rawValue,
+        ])
+    }
+
     /// Creates the task, then puts its tags on, which `createTask` doesn't take.
     public func createTask(_ draft: TaskDraft, in workspaceID: Int) async throws -> TaskItem {
         var task: TaskItem = try await call("createTask", [
