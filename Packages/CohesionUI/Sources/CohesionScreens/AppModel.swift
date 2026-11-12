@@ -125,6 +125,7 @@ public final class AppModel {
         client = nil
         workspaces = []
         failedReplies = [:]
+        ComposerDrafts.forgetAll()
         lastWorkspaceID = nil
     }
 

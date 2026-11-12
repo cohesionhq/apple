@@ -35,7 +35,9 @@ public struct AgentChatView: View {
     #endif
 
     @State private var messages: [AgentMessage] = []
-    @State private var draft = ""
+    /// What's typed in the field, kept in `ComposerDrafts` so it outlives
+    /// the app being swiped away.
+    @State private var draft: String
     /// Counts sends, giving the field a new identity each time: a focused
     /// field can keep drawing what was sent after `draft` empties, until
     /// something else redraws it.
@@ -119,6 +121,7 @@ public struct AgentChatView: View {
     public init(agent: Agent, onChange: @escaping () async -> Void) {
         self.agent = agent
         self.onChange = onChange
+        _draft = State(initialValue: ComposerDrafts.text(for: agent.id))
     }
 
     public var body: some View {
@@ -321,6 +324,7 @@ public struct AgentChatView: View {
             if phase == .active { Task { await load() } }
         }
         .onChange(of: model.failedReplies[agent.id], initial: true) { restoreFailedReply() }
+        .onChange(of: draft) { ComposerDrafts.save(draft, for: agent.id) }
         .errorAlert(window.errorHeldForSheets($error))
     }
 
@@ -1090,6 +1094,28 @@ struct WorkingIndicator: View {
         ReplyCaption(title: words ?? "Working…", isWorking: true)
             .accessibilityRemoveTraits(.isHeader)
             .accessibilityLabel(words ?? "Working")
+    }
+}
+
+/// What's typed in each agent's field and not yet sent, by agent, kept in
+/// the user's defaults so a chat reopens on it after the app quits. Sending
+/// empties the field, which clears it.
+enum ComposerDrafts {
+    private static let key = "composerDrafts"
+
+    static func text(for agentID: Int) -> String {
+        (UserDefaults.standard.dictionary(forKey: key)?[String(agentID)] as? String) ?? ""
+    }
+
+    static func save(_ text: String, for agentID: Int) {
+        var drafts = UserDefaults.standard.dictionary(forKey: key) ?? [:]
+        drafts[String(agentID)] = text.isEmpty ? nil : text
+        UserDefaults.standard.set(drafts, forKey: key)
+    }
+
+    /// Forgets every draft, which belong to the server left.
+    static func forgetAll() {
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }
 
