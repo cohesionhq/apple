@@ -182,8 +182,10 @@ struct RootView: View {
             Task { await window.loadAgents() }
         }
         .onChange(of: window.agents) {
-            // The Agents widget shows the unread ones.
+            // The Agents widget shows the unread ones, and an agenda's change
+            // posts a message, which changes its agent's row.
             WidgetCenter.shared.reloadTimelines(ofKind: "Agents")
+            WidgetCenter.shared.reloadTimelines(ofKind: "AgentAgenda")
         }
         .sheet(isPresented: $isShowingSettings) {
             NavigationStack { SettingsView() }

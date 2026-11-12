@@ -18,7 +18,7 @@ builds the four iOS targets, since the app embeds its three extensions; the
 | `Cohesion` | `Cohesion/` | The app, iPhone and iPad (`com.hellocohesion.app`): its tabs and sidebar, Settings, pushes. |
 | `CohesionMac` | `CohesionMac/` | The app on the Mac (`com.hellocohesion.plus.mac`, named Cohesion): its window, Settings window and menu bar. |
 | `CohesionShare` | `CohesionShare/` | The share extension: sends a shared URL to an agent's chat. |
-| `CohesionWidgets` | `CohesionWidgets/` | The Agents and Tasks widgets, the activities Live Activity and the controls. |
+| `CohesionWidgets` | `CohesionWidgets/` | The Agents, Tasks and Agenda widgets, the activities Live Activity and the controls. |
 | `CohesionNotificationService` | `CohesionNotificationService/` | Turns an agent push into a communication notification. |
 
 The folders are file-system-synchronized, so a new file joins its folder's
