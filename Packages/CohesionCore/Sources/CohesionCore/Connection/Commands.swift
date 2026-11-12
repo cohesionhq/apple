@@ -53,7 +53,8 @@ extension CohesionClient {
     /// `sizes`, ordered by `sort`: `limit` of them from `offset`. `dueBefore`
     /// and `dueAfter` (`"YYYY-MM-DD"`) keep those due strictly between those
     /// days, and `assignee` those assigned to them. Every workspace's tasks
-    /// when `workspaceID` is `nil`.
+    /// when `workspaceID` is `nil`. `keeping` keeps the page for `keptTasks`:
+    /// only the first page a list opens on is worth it.
     public func listTasks(
         in workspaceID: Int?,
         scope: TaskScope,
@@ -67,8 +68,52 @@ extension CohesionClient {
         limit: Int = 50,
         dueBefore: String? = nil,
         dueAfter: String? = nil,
-        assignee: TaskAssignee? = nil
+        assignee: TaskAssignee? = nil,
+        keeping: Bool = false
     ) async throws -> TaskPage {
+        try await call("listTasks", Self.taskListArguments(
+            workspaceID, scope, statuses, tags, priorities, sizes, sort, descending,
+            offset, limit, dueBefore, dueAfter, assignee
+        ), keeping: keeping ? .whole : nil)
+    }
+
+    /// The page `listTasks` with the same arguments last kept.
+    public func keptTasks(
+        in workspaceID: Int?,
+        scope: TaskScope,
+        statuses: [TaskStatus],
+        tags: TagFilter,
+        priorities: Set<TaskPriority>,
+        sizes: Set<TaskSize>,
+        sort: TaskSort,
+        descending: Bool,
+        offset: Int = 0,
+        limit: Int = 50,
+        dueBefore: String? = nil,
+        dueAfter: String? = nil,
+        assignee: TaskAssignee? = nil
+    ) -> TaskPage? {
+        keptReply("listTasks", Self.taskListArguments(
+            workspaceID, scope, statuses, tags, priorities, sizes, sort, descending,
+            offset, limit, dueBefore, dueAfter, assignee
+        ))
+    }
+
+    private static func taskListArguments(
+        _ workspaceID: Int?,
+        _ scope: TaskScope,
+        _ statuses: [TaskStatus],
+        _ tags: TagFilter,
+        _ priorities: Set<TaskPriority>,
+        _ sizes: Set<TaskSize>,
+        _ sort: TaskSort,
+        _ descending: Bool,
+        _ offset: Int,
+        _ limit: Int,
+        _ dueBefore: String?,
+        _ dueAfter: String?,
+        _ assignee: TaskAssignee?
+    ) -> [String: Any?] {
         let folder: Any = switch scope {
         case .inbox: "inbox"
         case .folder(let id): id
@@ -77,12 +122,12 @@ extension CohesionClient {
         var due: [String: String] = [:]
         due["before"] = dueBefore
         due["after"] = dueAfter
-        return try await call("listTasks", [
+        return [
             "workspace_id": workspaceID,
             "folder": folder,
             "statuses": statuses.map(\.rawValue),
             "tags": tags.wireValue,
-            "priorities": priorities.isEmpty ? nil : priorities.map(\.rawValue),
+            "priorities": priorities.isEmpty ? nil : priorities.map(\.rawValue).sorted(),
             "sizes": sizes.isEmpty ? nil : sizes.map(\.rawValue).sorted(),
             "sort": sort.rawValue,
             "descending": descending,
@@ -90,7 +135,7 @@ extension CohesionClient {
             "limit": limit,
             "due_date": due.isEmpty ? nil : due,
             "assignee": assignee?.wireValue,
-        ])
+        ]
     }
 
     /// Task `taskID`, whatever its status: in workspace `workspaceID`, or in

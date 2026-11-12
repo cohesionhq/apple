@@ -81,14 +81,16 @@ public struct WindowContent<Content: View>: View {
 
 extension View {
     /// What every shell's window does while it's open: keeps its lists
-    /// current, shows them as last sent at first, and takes the lists from
-    /// the window for the screens under it.
+    /// current, shows them as last sent at first, warms what the tabs open
+    /// on (`WindowModel.warm`), and takes the lists from the window for the
+    /// screens under it.
     public func keepsWindowLists(_ window: WindowModel) -> some View {
         @Bindable var window = window
         return task(id: window.selectedWorkspaceID) {
             await window.load()
             await window.watch()
         }
+        .task(id: window.selectedWorkspaceID) { await window.warm() }
         .task { await window.watchAgents() }
         .task { await window.watchTeams() }
         .task { await window.watchProfile() }

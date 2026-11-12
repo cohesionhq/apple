@@ -86,13 +86,19 @@ cut to its middle square, are the Mac's.
   (workspaces, task folders, tags and saved views, feeds,
   the documents without their contents, contacts with their photos,
   agents, teams, actors, actor sessions, clients, connector accounts, the
-  workspace's shown kinds of resource), kept in Caches under `Replies/<server>/` by the app's client
+  workspace's shown kinds of resource, the first page of each task list and
+  Today's tasks due), kept in Caches under `Replies/<server>/` by the app's client
   (`keeping:` on the command in `Commands.swift`) and read back with its
-  `kept…()` beside it. `AppModel` starts on the kept workspaces, `RootView`
-  and `DocumentListView` show the kept lists on appearing (and on switching
-  workspace), then load and watch as before, so a launch shows no empty or
-  loading state. Nothing deeper is kept: chats, transcripts, task lists,
-  articles, documents and the journal are always fetched. Unpairing (or a
+  `kept…()` beside it. A key writes a dictionary or array argument as JSON
+  with sorted keys, so it's the same each launch. `AppModel` starts on the
+  kept workspaces, `RootView`, `LibraryView`, `DocumentListView`,
+  `TaskListView` and `DashboardDueSection` show the kept lists on appearing
+  (and on switching workspace), then load and watch as before, so a launch
+  shows no empty or loading state. At launch and on switching workspace,
+  `WindowModel.warm` also asks for what the tabs not yet opened show first
+  (the documents and the Inbox), so they're kept fresh by the time a tab is
+  opened. Nothing deeper is kept: chats, transcripts, a task list past its
+  first page, articles, documents and the journal are always fetched. Unpairing (or a
   revoke) forgets every server's. The extensions don't keep replies.
 - `Changes.swift`: the socket, one a client however many windows and screens
   listen, open while anyone does: `hello` (updates `vocabulary`), then
