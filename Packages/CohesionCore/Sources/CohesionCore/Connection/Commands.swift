@@ -544,22 +544,22 @@ extension CohesionClient {
     /// The workspace's documents, journal entries aside, most recently
     /// modified first. Only the documents' list is kept, not the journal's,
     /// and without what the documents say.
-    public func listDocuments(_ type: DocumentType = .normal, in workspaceID: Int) async throws -> [Document] {
+    public func listDocuments(_ type: DocumentType = .normal, in workspaceID: Int) async throws -> [DocumentSummary] {
         try await call(
             "listDocuments",
             ["workspace_id": workspaceID, "document_type": type.rawValue],
-            // The list doesn't show the contents.
-            keeping: type == .normal ? .blanking(["contents"]) : nil
+            // The list doesn't show the opening.
+            keeping: type == .normal ? .blanking(["opening"]) : nil
         )
     }
 
-    public func keptDocuments(in workspaceID: Int) -> [Document]? {
+    public func keptDocuments(in workspaceID: Int) -> [DocumentSummary]? {
         keptReply("listDocuments", ["workspace_id": workspaceID, "document_type": DocumentType.normal.rawValue])
     }
 
     /// The documents whose title contains `query`, journal entries aside.
-    public func searchDocuments(_ query: String, in workspaceID: Int) async throws -> [Document] {
-        let found: [Document] = try await call("searchDocuments", [
+    public func searchDocuments(_ query: String, in workspaceID: Int) async throws -> [DocumentSummary] {
+        let found: [DocumentSummary] = try await call("searchDocuments", [
             "workspace_id": workspaceID,
             "query": query,
         ])
@@ -592,9 +592,18 @@ extension CohesionClient {
     }
 
     public func delete(_ document: Document) async throws {
+        try await deleteDocument(document.id, in: document.workspaceID)
+    }
+
+    /// Deletes a document as a list shows it.
+    public func delete(_ document: DocumentSummary) async throws {
+        try await deleteDocument(document.id, in: document.workspaceID)
+    }
+
+    private func deleteDocument(_ documentID: Int, in workspaceID: Int) async throws {
         let _: JSONValue = try await call("deleteDocument", [
-            "workspace_id": document.workspaceID,
-            "document_id": document.id,
+            "workspace_id": workspaceID,
+            "document_id": documentID,
         ])
     }
 
@@ -739,7 +748,8 @@ extension CohesionClient {
     /// The memories the agent sees, oldest first: its own, its team's and
     /// the global ones; only the global ones for `nil`.
     public func listMemories(of agentID: Int?) async throws -> [Memory] {
-        try await call("listMemories", ["agent_id": agentID])
+        let filter: Any = agentID.map { ["seenBy": $0] } ?? "global"
+        return try await call("listMemories", ["filter": filter])
     }
 
     public func forget(_ memory: Memory) async throws {
@@ -814,7 +824,7 @@ extension CohesionClient {
 
     /// The images attached to `message`, in the order sent.
     public func attachments(of message: AgentMessage) async throws -> [AgentAttachment] {
-        try await call("listAgentMessageAttachments", ["message_id": message.id])
+        try await call("listAgentMessageAttachments", ["message_ids": [message.id]])
     }
 
     /// Reacts to the agent's `message` with an emoji, or clears the
@@ -921,7 +931,7 @@ extension CohesionClient {
 
     /// The images that came with `message`, in the order sent.
     public func attachments(ofActorSessionMessage message: ActorSessionMessage) async throws -> [ActorSessionAttachment] {
-        try await call("listActorSessionMessageAttachments", ["message_id": message.id])
+        try await call("listActorSessionMessageAttachments", ["message_ids": [message.id]])
     }
 
     /// Hands `actor` a new session, `prompt`, with `images` attached, on its
@@ -1212,7 +1222,7 @@ extension CohesionClient {
     }
 
     public func listPermissions(of extensionSummary: ExtensionSummary) async throws -> [ExtensionPermission] {
-        try await call("listExtensionPermissions", ["extension_id": extensionSummary.id])
+        try await call("listExtensionPermissions", ["extension_ids": [extensionSummary.id]])
     }
 
     /// Grants or revokes `permission`; cohesiond restarts the extension's
@@ -1228,7 +1238,7 @@ extension CohesionClient {
     }
 
     public func listHooks(of extensionSummary: ExtensionSummary) async throws -> [ExtensionHook] {
-        try await call("listExtensionHooks", ["extension_id": extensionSummary.id])
+        try await call("listExtensionHooks", ["extension_ids": [extensionSummary.id]])
     }
 
     /// Turns `hook` on or off; it applies the next time the hook fires.

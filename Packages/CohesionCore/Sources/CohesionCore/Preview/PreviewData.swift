@@ -193,12 +193,14 @@ nonisolated private struct Fixtures {
             return allDocuments
                 .filter { ($0["workspace_id"] as? Int) == workspace && ($0["document_type"] as? String) == type }
                 .sorted { ($0["modified"] as? Int ?? 0) > ($1["modified"] as? Int ?? 0) }
+                .map(documentSummary)
         case "searchDocuments":
             let query = (args["query"] as? String ?? "").lowercased()
             return allDocuments.filter {
                 ($0["workspace_id"] as? Int) == workspace
                     && (query.isEmpty || ($0["title"] as? String ?? "").lowercased().contains(query))
             }
+            .map(documentSummary)
         case "getDocument":
             let id = args["document_id"] as? Int
             return allDocuments.first { ($0["id"] as? Int) == id && ($0["workspace_id"] as? Int) == workspace }
@@ -228,9 +230,8 @@ nonisolated private struct Fixtures {
             let limit = args["limit"] as? Int ?? 100
             return Array(messages.suffix(limit))
         case "listAgentMessageAttachments":
-            let id = args["message_id"] as? Int
-            return id == 1014
-                ? [["id": id ?? 0, "media_type": "image/png", "data": PreviewData.screenshotPNG]]
+            return (args["message_ids"] as? [Int] ?? []).contains(1014)
+                ? [["id": 1014, "media_type": "image/png", "data": PreviewData.screenshotPNG]]
                 : []
         case "listAgentCues":
             return cues(args["agent_id"] as? Int)
@@ -242,7 +243,8 @@ nonisolated private struct Fixtures {
             let runs = runs(args["agent_id"] as? Int)
             return Array(runs.prefix(args["limit"] as? Int ?? 50))
         case "listMemories":
-            return memories(of: args["agent_id"] as? Int)
+            // `{"seenBy": id}` or `"global"`; `"every"` isn't asked for.
+            return memories(of: (args["filter"] as? [String: Any])?["seenBy"] as? Int)
 
         // Actors
         case "listActors":
@@ -263,7 +265,7 @@ nonisolated private struct Fixtures {
         case "listActorSessionMessages":
             return actorSessionMessages(args["session_id"] as? Int)
         case "listActorSessionMessageAttachments":
-            return (args["message_id"] as? Int) == 2101
+            return (args["message_ids"] as? [Int] ?? []).contains(2101)
                 ? [["id": 2101, "media_type": "image/png", "data": PreviewData.screenshotPNG]]
                 : []
         case "listClients":
@@ -314,9 +316,9 @@ nonisolated private struct Fixtures {
         case "listExtensions":
             return extensions
         case "listExtensionPermissions":
-            return extensionPermissions(args["extension_id"] as? Int)
+            return extensionPermissions((args["extension_ids"] as? [Int])?.first)
         case "listExtensionHooks":
-            return extensionHooks(args["extension_id"] as? Int)
+            return extensionHooks((args["extension_ids"] as? [Int])?.first)
         case "searchExtensionRegistries":
             return registrySearch(args["query"] as? String ?? "")
         case "previewExtension":
@@ -1079,6 +1081,14 @@ nonisolated private struct Fixtures {
     }
 
     /// The documents and the journal entries, which are documents too.
+    /// A document as a listing returns it: its text's first 500 characters
+    /// in place of the text.
+    func documentSummary(_ document: [String: Any]) -> [String: Any] {
+        var summary = document
+        summary["opening"] = String((summary.removeValue(forKey: "contents") as? String ?? "").prefix(500))
+        return summary
+    }
+
     var allDocuments: [[String: Any]] {
         documents + journal.map { entry in
             [

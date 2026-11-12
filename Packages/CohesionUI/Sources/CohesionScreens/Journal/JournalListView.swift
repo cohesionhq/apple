@@ -10,7 +10,7 @@ struct JournalListView: View {
 
     @Environment(AppModel.self) private var model
 
-    @State private var entries: [Document] = []
+    @State private var entries: [DocumentSummary] = []
     @State private var error: (any Error)?
     /// Where an opened entry zooms out of, on iPad.
     @Namespace private var rows
@@ -18,13 +18,13 @@ struct JournalListView: View {
     var body: some View {
         List {
             Section {
-                entryLink(day: nil, title: "Today", preview: today?.contents)
+                entryLink(day: nil, title: "Today", preview: today?.opening)
             }
             ForEach(months, id: \.month) { group in
                 Section(group.month.formatted(.dateTime.month(.wide).year())) {
                     ForEach(group.entries) { entry in
                         if let day = entry.journalDate, let date = CalendarDay.date(day) {
-                            entryLink(day: day, title: title(of: date), preview: entry.contents)
+                            entryLink(day: day, title: title(of: date), preview: entry.opening)
                         }
                     }
                 }
@@ -37,12 +37,12 @@ struct JournalListView: View {
     }
 
     /// Today's entry, once something is written in it.
-    private var today: Document? {
+    private var today: DocumentSummary? {
         entries.first { $0.journalDate == CalendarDay.string(.now) }
     }
 
     /// The entries before today, newest first.
-    private var earlier: [Document] {
+    private var earlier: [DocumentSummary] {
         let today = CalendarDay.string(.now)
         return entries
             .filter { ($0.journalDate ?? today) < today }
@@ -51,9 +51,9 @@ struct JournalListView: View {
 
     /// The entries before today by the month they're in, newest first, as
     /// the web's Journal heads its months.
-    private var months: [(month: Date, entries: [Document])] {
+    private var months: [(month: Date, entries: [DocumentSummary])] {
         let calendar = Calendar.current
-        var months: [(month: Date, entries: [Document])] = []
+        var months: [(month: Date, entries: [DocumentSummary])] = []
         for entry in earlier {
             guard let day = entry.journalDate, let date = CalendarDay.date(day),
                   let month = calendar.dateInterval(of: .month, for: date)?.start
@@ -108,7 +108,12 @@ struct JournalListView: View {
     private func watch() async {
         guard let client = model.client else { return }
         let workspaceID = workspaceID
-        for await origin in client.loads(matching: { $0 == .documents(workspaceID: workspaceID) }) {
+        for await origin in client.loads(matching: {
+            switch $0 {
+            case .documents(workspaceID), .documentText(workspaceID, _): true
+            default: false
+            }
+        }) {
             await load(origin)
         }
     }

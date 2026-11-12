@@ -119,7 +119,14 @@ struct JournalView: View {
     /// which does the first load.
     private func watch() async {
         guard let client = model.client else { return }
-        for await origin in client.loads(matching: { $0 == .documents(workspaceID: workspaceID) }) {
+        let workspaceID = workspaceID
+        for await origin in client.loads(matching: {
+            // The entry may not exist yet, so any document's text, not just its id's.
+            switch $0 {
+            case .documents(workspaceID), .documentText(workspaceID, _): true
+            default: false
+            }
+        }) {
             await load(origin)
         }
     }

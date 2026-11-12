@@ -132,7 +132,13 @@ struct DocumentView: View {
     private func watch() async {
         guard let client = model.client else { return }
         let workspaceID = workspaceID
-        for await origin in client.loads(matching: { $0 == .documents(workspaceID: workspaceID) }) {
+        let documentID = documentID
+        for await origin in client.loads(matching: {
+            switch $0 {
+            case .documents(workspaceID), .documentText(workspaceID, documentID): true
+            default: false
+            }
+        }) {
             await load(origin)
         }
     }

@@ -13,17 +13,17 @@ struct DocumentListView: View {
 
     @Environment(AppModel.self) private var model
 
-    @State private var documents: [Document] = []
+    @State private var documents: [DocumentSummary] = []
     /// The workspace's folders that are tables, in their order.
     @State private var tables: [DocumentFolder] = []
     /// A document just created, opened once it is.
     @State private var created: Int?
     @State private var query = ""
     /// The documents whose title matches `query`, once cohesiond answers.
-    @State private var found: [Document]?
+    @State private var found: [DocumentSummary]?
     @State private var isLoaded = false
     @State private var isCreating = false
-    @State private var deleting: Document?
+    @State private var deleting: DocumentSummary?
     @State private var error: (any Error)?
     /// Where an opened document zooms out of, on iPad.
     @Namespace private var rows
@@ -118,7 +118,7 @@ struct DocumentListView: View {
 
     /// The documents shown, by when they were last modified: today, in the
     /// six days before, and earlier. Empty groups are left out.
-    private var groups: [(title: String, documents: [Document])] {
+    private var groups: [(title: String, documents: [DocumentSummary])] {
         let shown = query.isEmpty ? documents : found ?? []
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
@@ -173,21 +173,23 @@ struct DocumentListView: View {
         guard let client = model.client else { return }
         let workspaceID = workspaceID
         for await origin in client.loads(matching: {
-            $0 == .documents(workspaceID: workspaceID) || $0 == .documentFolders(workspaceID: workspaceID)
+            switch $0 {
+            case .documents(workspaceID), .documentText(workspaceID, _), .documentFolders(workspaceID): true
+            default: false
+            }
         }) {
             await load(origin)
         }
     }
 
-    /// Creates an untitled document and opens it.
+    /// Creates an untitled document and opens it; the list gains it when
+    /// cohesiond reports the workspace's documents changed.
     private func create() {
         guard let client = model.client else { return }
         isCreating = true
         Task {
             do {
-                let document = try await client.createDocument(titled: "Untitled", in: workspaceID)
-                documents.insert(document, at: 0)
-                created = document.id
+                created = try await client.createDocument(titled: "Untitled", in: workspaceID).id
             } catch {
                 self.error = error
             }
@@ -195,7 +197,7 @@ struct DocumentListView: View {
         }
     }
 
-    private func delete(_ document: Document) {
+    private func delete(_ document: DocumentSummary) {
         guard let client = model.client else { return }
         Task {
             do {

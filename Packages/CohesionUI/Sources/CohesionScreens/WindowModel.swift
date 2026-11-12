@@ -249,9 +249,10 @@ public final class WindowModel {
             case .taskFolders(let id), .tags(let id), .savedTaskViews(let id),
                  .contacts(let id), .resourceKinds(let id):
                 id == workspaceID
-            case .agent, .agentTeams, .profile, .documents, .documentFolders, .documentTable, .taskList, .feedArticles, .intelligence, .clients, .memories, .agentSkills,
+            case .agent, .agentMessage, .agentTeams, .profile, .documents, .documentText, .documentFolders, .documentTable,
+                 .taskList, .taskDescription, .feedArticles, .intelligence, .clients, .memories, .agentSkills,
                  .resources,
-                 .actors, .actorSessions, .actorSession, .actorUsage, .notification, .other: false
+                 .actors, .actorSessions, .actorSession, .actorSessionMessage, .actorUsage, .notification, .other: false
             }
         }) {
             await load()

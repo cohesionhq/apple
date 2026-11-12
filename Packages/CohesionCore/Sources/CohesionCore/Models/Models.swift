@@ -1128,6 +1128,45 @@ public struct Document: Decodable, Identifiable, Hashable {
     }
 }
 
+/// A document as `listDocuments` and `searchDocuments` list it: everything
+/// but its text, with the start of it to show a line of.
+public struct DocumentSummary: Decodable, Identifiable, Hashable {
+    public let id: Int
+    public let workspaceID: Int
+    public let type: DocumentType
+    public let title: String
+    /// The first characters of its text, as Markdown; the whole text when
+    /// it's short.
+    public let opening: String
+    /// When the contents last changed.
+    public let modified: Date
+    /// For a journal entry, its day as `"YYYY-MM-DD"`.
+    public let journalDate: String?
+    /// The folder it's filed in, or `nil` in the Inbox; in a table's, it's
+    /// a row.
+    public let folderID: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, opening, modified
+        case workspaceID = "workspace_id"
+        case type = "document_type"
+        case journalDate = "journal_date"
+        case folderID = "folder_id"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        workspaceID = try container.decode(Int.self, forKey: .workspaceID)
+        type = try container.decode(DocumentType.self, forKey: .type)
+        title = try container.decode(String.self, forKey: .title)
+        opening = try container.decode(String.self, forKey: .opening)
+        modified = Date(timeIntervalSince1970: try container.decode(Double.self, forKey: .modified))
+        journalDate = try container.decodeIfPresent(String.self, forKey: .journalDate)
+        folderID = try container.decodeIfPresent(Int.self, forKey: .folderID)
+    }
+}
+
 public enum DocumentType: String, Decodable {
     case normal
     /// A day's journal entry, which the journal shows.

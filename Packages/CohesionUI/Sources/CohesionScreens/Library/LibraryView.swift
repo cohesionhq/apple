@@ -19,7 +19,7 @@ public struct LibraryView<Link: Hashable>: View {
 
     @Environment(AppModel.self) private var model
 
-    @State private var documents: [Document] = []
+    @State private var documents: [DocumentSummary] = []
     @State private var error: (any Error)?
 
     /// How many of the documents changed last show as cards.
@@ -85,7 +85,7 @@ public struct LibraryView<Link: Hashable>: View {
     }
 
     /// The documents changed last, newest first.
-    private var recent: [Document] {
+    private var recent: [DocumentSummary] {
         Array(documents.sorted { $0.modified > $1.modified }.prefix(Self.recentCount))
     }
 
@@ -131,7 +131,12 @@ public struct LibraryView<Link: Hashable>: View {
     private func watch() async {
         guard let client = model.client else { return }
         let workspaceID = workspaceID
-        for await origin in client.loads(matching: { $0 == .documents(workspaceID: workspaceID) }) {
+        for await origin in client.loads(matching: {
+            switch $0 {
+            case .documents(workspaceID), .documentText(workspaceID, _): true
+            default: false
+            }
+        }) {
             await origin.run {
                 documents = try await client.listDocuments(in: workspaceID)
             } failed: { self.error = $0 }
@@ -141,7 +146,7 @@ public struct LibraryView<Link: Hashable>: View {
 
 /// A recent document: its symbol, its title and when it changed, on a card.
 private struct RecentDocumentCard: View {
-    let document: Document
+    let document: DocumentSummary
     let modifiedStyle: Date.RelativeFormatStyle
 
     /// A grouped list's row color, so a card reads as one of its rows.

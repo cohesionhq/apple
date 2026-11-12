@@ -506,13 +506,19 @@ public struct ActorSessionView: View {
         }
     }
 
-    /// Loads what was said in the session, then reloads it only when cohesiond
-    /// reports this transcript changed: a long one is the most there is to
-    /// fetch, and other sessions change often while their actors work.
+    /// Loads what was said in the session, then reloads it only when
+    /// cohesiond reports this session or a message in its transcript
+    /// changed: a long one is the most there is to fetch, and other sessions
+    /// change often while their actors work.
     private func watchMessages() async {
         guard let client = model.client else { return }
         await loadMessages()
-        for await _ in client.changes(matching: { $0 == .actorSession(sessionID) }) {
+        for await _ in client.changes(matching: { [sessionID] in
+            switch $0 {
+            case .actorSession(sessionID), .actorSessionMessage(sessionID, _): true
+            default: false
+            }
+        }) {
             await loadMessages()
         }
     }

@@ -204,8 +204,9 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   picker, and `teamDialogs` names, renames and deletes teams.
   `MemoriesView` sections an agent's memories by scope.
   `MemorySettingsView` is Settings › Memories, as the web's: the global
-  memories (`listMemories` with no agent), then each team's and each
-  agent's own, read through every agent's `listMemories`; both forget.
+  memories (`listMemories` filtered `global`), then each team's and each
+  agent's own, read through every agent's `listMemories` (`seenBy`); both
+  forget.
 - `Agents/AgentInfoView.swift`: the sheet the chat's header opens: Context,
   kept current, then a row for each page it pushes, Identity (`AgentForm`,
   which is also the sheet that creates an agent), Memories (`MemoriesView`),
@@ -246,7 +247,8 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   reports a plan.
 - `Actors/ActorSessionView.swift`: an actor session's transcript.
   `listActorSessionMessages` takes no page, so the whole transcript is
-  fetched (only on `actorSession(<id>)`, not on every session's change), and the
+  fetched (only on `actorSession(<id>)` or `actorSessionMessage` for it, not
+  on every session's change), and the
   view draws the latest 100 messages it shows, with "Load earlier
   messages" for the page before, as the agent chat does. What drawing
   needs (the shown messages, each tool's next message, each question's

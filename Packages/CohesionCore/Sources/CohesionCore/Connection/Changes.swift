@@ -4,14 +4,20 @@ import Synchronization
 /// Data cohesiond reports changed, as named in its `invalidate` pushes. Only
 /// the kinds the app watches are told apart.
 public enum Invalidation: Decodable, Equatable {
-    /// Anything about an agent changed: its row, messages, cues or runs.
+    /// Anything about an agent but its messages changed: its row, cues,
+    /// agenda or runs.
     case agent(Int)
+    /// A message in an agent's conversation was added or changed (a
+    /// reaction, an answer, a script's result).
+    case agentMessage(agentID: Int, messageID: Int)
     /// The teams of agents changed: one was created, renamed or deleted.
     case agentTeams
     /// A workspace's task folders changed.
     case taskFolders(workspaceID: Int)
     /// The tasks in one of a workspace's lists changed.
     case taskList(workspaceID: Int)
+    /// One task's description changed; no list filters or sorts by it.
+    case taskDescription(workspaceID: Int, taskID: Int)
     /// A workspace's saved task views changed: one was created, changed,
     /// renamed, reordered or deleted, or lost a folder or tag it used.
     case savedTaskViews(workspaceID: Int)
@@ -22,8 +28,12 @@ public enum Invalidation: Decodable, Equatable {
     case contacts(workspaceID: Int)
     /// The user's profile changed: their name or photo was set or removed.
     case profile
-    /// A workspace's documents changed, journal entries among them.
+    /// A workspace's documents changed, journal entries among them: one was
+    /// created, renamed, moved, pinned or deleted. An edit to a document's
+    /// text alone is `documentText`.
     case documents(workspaceID: Int)
+    /// The text of one document changed, and so its `modified` and opening.
+    case documentText(workspaceID: Int, documentID: Int)
     /// A workspace's document folders changed: one was created, renamed,
     /// moved or deleted, or became a table or stopped being one.
     case documentFolders(workspaceID: Int)
@@ -58,8 +68,12 @@ public enum Invalidation: Decodable, Equatable {
     /// An actor session was started, said something, changed where it stands
     /// or ended.
     case actorSessions
-    /// What was said in an actor session changed.
+    /// An actor session changed as a whole: its context, a stretch of its
+    /// work ending, its subagents, or a request from one of them.
     case actorSession(Int)
+    /// A message in an actor session's transcript was added, changed or
+    /// taken out.
+    case actorSessionMessage(sessionID: Int, messageID: Int)
     /// How much of its plan an actor has used changed.
     case actorUsage
     /// A note for whoever is looking, such as an agent's, to show once;
@@ -80,18 +94,71 @@ public enum Invalidation: Decodable, Equatable {
         }
     }
 
+    /// An `agentMessage` key's `id`.
+    private struct AgentMessageKey: Decodable {
+        let agentID: Int
+        let messageID: Int
+
+        private enum CodingKeys: String, CodingKey {
+            case agentID = "agent_id"
+            case messageID = "message_id"
+        }
+    }
+
+    /// An `actorSessionMessage` key's `id`.
+    private struct ActorSessionMessageKey: Decodable {
+        let sessionID: Int
+        let messageID: Int
+
+        private enum CodingKeys: String, CodingKey {
+            case sessionID = "session_id"
+            case messageID = "message_id"
+        }
+    }
+
+    /// A `documentText` key's `id`.
+    private struct DocumentTextKey: Decodable {
+        let workspaceID: Int
+        let documentID: Int
+
+        private enum CodingKeys: String, CodingKey {
+            case workspaceID = "workspace_id"
+            case documentID = "document_id"
+        }
+    }
+
+    /// A `taskDescription` key's `id`.
+    private struct TaskDescriptionKey: Decodable {
+        let workspaceID: Int
+        let taskID: Int
+
+        private enum CodingKeys: String, CodingKey {
+            case workspaceID = "workspace_id"
+            case taskID = "task_id"
+        }
+    }
+
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         switch try container.decode(String.self, forKey: .kind) {
         case "agent": self = .agent(try container.decode(Int.self, forKey: .id))
+        case "agentMessage":
+            let key = try container.decode(AgentMessageKey.self, forKey: .id)
+            self = .agentMessage(agentID: key.agentID, messageID: key.messageID)
         case "agentTeams": self = .agentTeams
         case "taskFolders": self = .taskFolders(workspaceID: try container.decode(Int.self, forKey: .id))
         case "taskList": self = .taskList(workspaceID: try container.decode(TaskListKey.self, forKey: .id).workspaceID)
+        case "taskDescription":
+            let key = try container.decode(TaskDescriptionKey.self, forKey: .id)
+            self = .taskDescription(workspaceID: key.workspaceID, taskID: key.taskID)
         case "savedTaskViews": self = .savedTaskViews(workspaceID: try container.decode(Int.self, forKey: .id))
         case "tags": self = .tags(workspaceID: try container.decode(Int.self, forKey: .id))
         case "contacts": self = .contacts(workspaceID: try container.decode(Int.self, forKey: .id))
         case "profile": self = .profile
         case "documents": self = .documents(workspaceID: try container.decode(Int.self, forKey: .id))
+        case "documentText":
+            let key = try container.decode(DocumentTextKey.self, forKey: .id)
+            self = .documentText(workspaceID: key.workspaceID, documentID: key.documentID)
         case "documentFolders": self = .documentFolders(workspaceID: try container.decode(Int.self, forKey: .id))
         case "documentTable": self = .documentTable(folderID: try container.decode(Int.self, forKey: .id))
         case "feeds": self = .feeds
@@ -106,6 +173,9 @@ public enum Invalidation: Decodable, Equatable {
         case "actors": self = .actors
         case "actorSessions": self = .actorSessions
         case "actorSession": self = .actorSession(try container.decode(Int.self, forKey: .id))
+        case "actorSessionMessage":
+            let key = try container.decode(ActorSessionMessageKey.self, forKey: .id)
+            self = .actorSessionMessage(sessionID: key.sessionID, messageID: key.messageID)
         case "actorUsage": self = .actorUsage
         case "notification":
             // A note this build can't read is skipped rather than failing the whole push.

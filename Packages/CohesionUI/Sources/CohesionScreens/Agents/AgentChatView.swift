@@ -517,13 +517,18 @@ public struct AgentChatView: View {
     }
 
     /// Loads the conversation, then reloads it whenever cohesiond reports the
-    /// agent changed while it's on screen. Requests to the agent return
-    /// before its turn runs, so this is how what it posts shows up, along
-    /// with notes from jobs.
+    /// agent or one of its messages changed while it's on screen. Requests
+    /// to the agent return before its turn runs, so this is how what it
+    /// posts shows up, along with notes from jobs.
     private func watch() async {
         guard let client = model.client else { return }
         // Its socket connects while the first load runs.
-        let changes = client.changes(matching: { [id = agent.id] in $0 == .agent(id) })
+        let changes = client.changes(matching: { [id = agent.id] in
+            switch $0 {
+            case .agent(id), .agentMessage(id, _): true
+            default: false
+            }
+        })
         await load(.asked)
         try? await client.markRead(agent.id)
         for await _ in changes {
