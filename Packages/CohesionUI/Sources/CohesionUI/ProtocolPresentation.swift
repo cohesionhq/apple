@@ -23,6 +23,13 @@ extension AgentColor {
     }
 }
 
+// MARK: - Tasks
+
+extension TaskFolder {
+    /// Its icon's color: its own, or indigo, the folders' before they had one.
+    public var iconColor: Color { color?.color ?? .indigo }
+}
+
 public extension AgentMessage {
     /// The icon of its quiet line, as the web's feed picks it: a memory's
     /// brain, a rebuilt context's fold, an agenda's checklist, a skill the

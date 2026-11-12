@@ -156,7 +156,9 @@ nonisolated private struct Fixtures {
         case "listTasks":
             return taskPage(args)
         case "listTaskFolders":
-            return folders.filter { $0.workspace == workspace }.map { ["id": $0.id, "title": $0.title] }
+            return folders.filter { $0.workspace == workspace }.map {
+                ["id": $0.id, "title": $0.title, "color": $0.color as Any? ?? NSNull()] as [String: Any]
+            }
         case "listTags":
             return tags.filter { $0.workspace == workspace }
                 .sorted { $0.name < $1.name }
@@ -346,12 +348,13 @@ nonisolated private struct Fixtures {
         let id: Int
         let workspace: Int
         let title: String
+        var color: String? = nil
     }
 
     var folders: [Folder] {
         [
-            Folder(id: 1, workspace: 1, title: "Launch"),
-            Folder(id: 2, workspace: 1, title: "Product"),
+            Folder(id: 1, workspace: 1, title: "Launch", color: "orange"),
+            Folder(id: 2, workspace: 1, title: "Product", color: "teal"),
             Folder(id: 3, workspace: 1, title: "Admin"),
             Folder(id: 4, workspace: 2, title: "Errands"),
             Folder(id: 5, workspace: 2, title: "House"),

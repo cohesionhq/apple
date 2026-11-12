@@ -272,10 +272,14 @@ public struct SavedTaskView: Decodable, Identifiable, Hashable {
 public struct TaskFolder: Decodable, Identifiable, Hashable {
     public let id: Int
     public let title: String
+    /// The color its icon is drawn in, from the agents' palette; `nil`
+    /// (sent as null, or left out by an older cohesiond) for none.
+    public let color: AgentColor?
 
-    public init(id: Int, title: String) {
+    public init(id: Int, title: String, color: AgentColor? = nil) {
         self.id = id
         self.title = title
+        self.color = color
     }
 }
 

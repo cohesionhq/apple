@@ -361,7 +361,13 @@ private struct TaskSection<Link: Hashable, Pages: View>: View {
         Section("Tasks", isExpanded: isExpanded) {
             row(.tasks(.inbox), "Inbox", systemImage: "tray")
             ForEach(folders) { folder in
-                row(.tasks(.folder(folder.id)), folder.title, systemImage: "folder")
+                NavigationLink(value: link(.tasks(.folder(folder.id)))) {
+                    Label {
+                        Text(folder.title)
+                    } icon: {
+                        Image(systemName: "folder").foregroundStyle(folder.color?.color ?? .accentColor)
+                    }
+                }
             }
         }
         if isExpanded.wrappedValue {
