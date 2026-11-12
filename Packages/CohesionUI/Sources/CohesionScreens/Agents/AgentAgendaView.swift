@@ -12,8 +12,7 @@ struct AgentAgendaView: View {
     let items: [AgentAgendaItem]
 
     var body: some View {
-        // The step the agent is on: the first not yet finished.
-        let current = items.first { !$0.isFinished }?.id
+        let current = AgentAgendaItem.current(in: items)?.id
         let finished = items.count(where: \.isFinished)
         List {
             Section {

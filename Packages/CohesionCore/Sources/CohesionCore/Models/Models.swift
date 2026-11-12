@@ -872,6 +872,12 @@ public struct AgentAgendaItem: Decodable, Identifiable, Equatable {
     }
 
     public var isFinished: Bool { finishedAt != nil }
+
+    /// The step the agent is on in `items`: the first not yet finished;
+    /// `nil` when every one is, or there are none.
+    public static func current(in items: [AgentAgendaItem]) -> AgentAgendaItem? {
+        items.first { !$0.isFinished }
+    }
 }
 
 /// A prompt the user saved for one agent, or for every agent on a team, to

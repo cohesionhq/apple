@@ -129,12 +129,13 @@ activity needs a `link` to open.
 
 ## Widgets
 
-- `CohesionWidgets.swift` is the bundle: `AgentsWidget`, `TasksWidget`, the
-  Live Activity and the controls.
+- `CohesionWidgets.swift` is the bundle: `AgentsWidget`, `TasksWidget`,
+  `AgentAgendaWidget`, the Live Activity and the controls.
 - Each widget loads the pairing, calls cohesiond itself and refreshes every
   15 minutes. The app reloads a widget by kind when what it shows changes
-  (`RootView`): the agents, or an invalidation of task lists, folders, tags
-  or saved views.
+  (`RootView`): the agents (for the Agents and Agenda widgets, since an
+  agenda's change posts a message, which changes its agent's row), or an
+  invalidation of task lists, folders, tags or saved views.
 - Taps open `AppLink` URLs (`widgetURL`, `Link`). A small widget has no `Link`,
   so the Tasks widget's rows there are buttons running `OpenTaskIntent`.
 - `TasksWidget` is configured in Edit Widget (`TasksWidgetConfiguration`): a
@@ -143,7 +144,14 @@ activity needs a `link` to open.
   `DashboardTaskFilter`'s, Upcoming, Inbox and All; a picked workspace adds its
   folders, tags and saved views. A view that's gone says so; it doesn't fall
   back to another. A locked keychain shows "Restoring your pairing…".
-- Its checkbox runs `CompleteTaskIntent`, `.background` and held by the
+- `AgentAgendaWidget` is configured in Edit Widget (`AgentAgendaConfiguration`),
+  picking an `AgentEntity` as the Chat with Agent control does. On the Home
+  Screen it draws the agenda as the web's column beside the conversation does
+  (a dot a step, then rows around the step the agent is on); on the Lock Screen
+  (`accessoryRectangular`) the agent's name over that step. With no step left
+  it says "All done", with no agenda "All clear"; an agent that's gone says so.
+  A tap opens the agent's chat.
+- The Tasks widget's checkbox runs `CompleteTaskIntent`, `.background` and held by the
   extension alone. The tap goes to `PendingCompletions`, in the extension's own
   `UserDefaults` (there is no App Group), and each reload sends what's waiting,
   so a tap away from the server isn't lost. A refusal drops it; a different
