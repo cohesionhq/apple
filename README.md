@@ -16,12 +16,9 @@ in two local Swift packages under `Packages/` (`CohesionCore` and
 ```sh
 # The iOS app and its three extensions
 xcodebuild -scheme Cohesion -destination 'generic/platform=iOS Simulator' build
-
-# The Mac app
-xcodebuild -scheme CohesionMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
-Simulator and unsigned Mac builds need no Apple developer account. To run
+Simulator builds need no Apple developer account. To run
 on a device, pick your own team under Signing & Capabilities for each
 target; the project names none. Keep the bundle identifiers
 (`com.hellocohesion.app…`) only if you can sign for them; otherwise

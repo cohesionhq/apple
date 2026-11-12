@@ -12,18 +12,15 @@ can't prove.
 ## 1. Build every target
 
 The `Cohesion` scheme embeds the three extensions, so one build compiles
-all four iOS targets; the `CohesionMac` scheme compiles the Mac app. The
-packages build in both, so a change to `Packages/` needs both:
+all four iOS targets, and the packages with them:
 
 ```sh
 xcodebuild -scheme Cohesion -destination 'generic/platform=iOS Simulator' build > /tmp/cohesion-apple-build.log 2>&1; echo "exit=$?"
 grep -E 'error:|warning:' /tmp/cohesion-apple-build.log | grep -v '^ ' | sort -u
-xcodebuild -scheme CohesionMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build > /tmp/cohesion-apple-mac-build.log 2>&1; echo "exit=$?"
-grep -E 'error:|warning:' /tmp/cohesion-apple-mac-build.log | grep -v '^ ' | sort -u
 ```
 
-- Each must end in `** BUILD SUCCEEDED **` with exit 0. No signing is needed
-  for the simulator, and the Mac build turns it off.
+- It must end in `** BUILD SUCCEEDED **` with exit 0. No signing is needed
+  for the simulator.
 - In a type-check that gives up ("unable to type-check this expression") or
   a nonsense error about `Array`, look for a member or memberwise `init` that
   isn't `public` in another package, or an API unavailable on the Mac.

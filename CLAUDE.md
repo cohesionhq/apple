@@ -137,13 +137,7 @@ called by their camelCase `type` with snake_case `args`.
 xcodebuild -scheme Cohesion -destination 'generic/platform=iOS Simulator' build
 ```
 
-That builds the four iOS targets;
-
-```sh
-xcodebuild -scheme CohesionMac -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
-```
-
-builds the Mac app. `verify-change` says what passing means.
+That builds the four iOS targets. `verify-change` says what passing means.
 Look at layout in a `#Preview` first (`verify-change` §5). Simulator checks
 stay small: an end-state screenshot per affected device with `simctl`, and the
 `device-interaction` skill only when a change needs a tap to show;

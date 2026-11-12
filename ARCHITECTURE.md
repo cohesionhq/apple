@@ -10,8 +10,7 @@ and Live Activities come through Cohesion Cloud's iOS Companion.
 ## Targets
 
 One project, `Cohesion.xcodeproj`. Building the `Cohesion` scheme
-builds the four iOS targets, since the app embeds its three extensions; the
-`CohesionMac` scheme builds the Mac app.
+builds the four iOS targets, since the app embeds its three extensions.
 
 | Target | Folder | What it is |
 | --- | --- | --- |
