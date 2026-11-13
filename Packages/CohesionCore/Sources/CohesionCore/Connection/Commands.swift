@@ -123,9 +123,9 @@ extension CohesionClient {
         ])
     }
 
-    /// Creates the task, then puts its tags on, which `createTask` doesn't take.
+    /// Creates the task with its tags on.
     public func createTask(_ draft: TaskDraft, in workspaceID: Int) async throws -> TaskItem {
-        var task: TaskItem = try await call("createTask", [
+        try await call("createTask", [
             "workspace_id": workspaceID,
             "title": draft.title,
             "description": draft.description,
@@ -134,11 +134,8 @@ extension CohesionClient {
             "folder_id": draft.folderID,
             "start_date": draft.startDate.map(CalendarDay.string),
             "due_date": draft.dueDate.map(CalendarDay.string),
+            "tag_ids": draft.tagIDs.sorted(),
         ])
-        for tagID in draft.tagIDs {
-            task = try await setTag(tagID, on: task, tagged: true)
-        }
-        return task
     }
 
     /// Sends one command for each field `draft` changes on `task`.
@@ -310,13 +307,12 @@ extension CohesionClient {
 
     /// Puts tag `tagID` on `task`, or takes it off; returns the task as it now is.
     public func setTag(_ tagID: Int, on task: TaskItem, tagged: Bool) async throws -> TaskItem {
-        let reply: TaggedTask = try await call("setTagged", [
+        try await call("setTagged", [
             "workspace_id": task.workspaceID,
             "tag_id": tagID,
             "task_id": task.id,
             "tagged": tagged,
         ])
-        return reply.task
     }
 
     // MARK: Contacts

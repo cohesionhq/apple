@@ -295,11 +295,6 @@ public struct Tag: Decodable, Identifiable, Hashable {
     }
 }
 
-/// The task a tag was put on or taken off, as `setTagged` replies with it.
-public struct TaggedTask: Decodable {
-    public let task: TaskItem
-}
-
 /// One page of a task listing, as `listTasks` replies with it.
 public struct TaskPage: Decodable {
     public let tasks: [TaskItem]

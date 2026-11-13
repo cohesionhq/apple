@@ -6,7 +6,11 @@ import SwiftUI
 /// The fields of a task, shared by the new-task sheet and the task detail screen.
 struct TaskForm: View {
     @Binding var draft: TaskDraft
+    /// The task's workspace, whose tags the form lists and creates.
+    let workspaceID: Int
     let folders: [TaskFolder]
+    /// The workspace's tags as the screen opening the form had them, shown
+    /// until the form lists them itself.
     let tags: [Tag]
     /// New tasks always start incomplete, so only existing ones show a status.
     var showsStatus = false
@@ -24,6 +28,11 @@ struct TaskForm: View {
     /// Set once the title has taken focus, so coming back from the notes
     /// editor doesn't raise the keyboard again.
     @State private var hasFocusedTitle = false
+    /// The workspace's tags as last listed here, kept current as cohesiond
+    /// changes them, so one created from the picker shows at once.
+    @State private var listedTags: [Tag]?
+
+    private var shownTags: [Tag] { listedTags ?? tags }
 
     var body: some View {
         Form {
@@ -69,18 +78,17 @@ struct TaskForm: View {
                     ForEach(folders) { Text($0.title).tag(Optional($0.id)) }
                 }
                 .tint(.secondary)
-                if !tags.isEmpty {
-                    NavigationLink {
-                        TagPicker(selection: $draft.tagIDs, tags: tags)
-                    } label: {
-                        LabeledContent("Tags") {
-                            let names = tags.filter { draft.tagIDs.contains($0.id) }.map(\.name)
-                            // A value whatever it holds, as the rows around it have.
-                            if names.isEmpty {
-                                Text("None")
-                            } else {
-                                Text(names, format: .list(type: .and))
-                            }
+                // Shown with no tags too, since the picker creates them.
+                NavigationLink {
+                    TagPicker(selection: $draft.tagIDs, tags: shownTags, create: createTag)
+                } label: {
+                    LabeledContent("Tags") {
+                        let names = shownTags.filter { draft.tagIDs.contains($0.id) }.map(\.name)
+                        // A value whatever it holds, as the rows around it have.
+                        if names.isEmpty {
+                            Text("None")
+                        } else {
+                            Text(names, format: .list(type: .and))
                         }
                     }
                 }
@@ -95,6 +103,25 @@ struct TaskForm: View {
             hasFocusedTitle = true
             isTitleFocused = true
         }
+        .task(id: workspaceID) { await watchTags() }
+    }
+
+    /// Lists the workspace's tags again whenever cohesiond changes them; a
+    /// failed listing keeps the ones shown.
+    private func watchTags() async {
+        guard let client = model.client else { return }
+        for await _ in client.changes(matching: { $0 == .tags(workspaceID: workspaceID) }) {
+            if let tags = try? await client.listTaskTags(in: workspaceID) { listedTags = tags }
+        }
+    }
+
+    /// Creates a tag named `name` and puts it on the task, listing the
+    /// tags again so it shows without waiting for the invalidation.
+    private func createTag(named name: String) async throws {
+        guard let client = model.client else { return }
+        let tag = try await client.createTaskTag(named: name, in: workspaceID)
+        listedTags = try await client.listTaskTags(in: workspaceID)
+        draft.tagIDs.insert(tag.id)
     }
 }
 
@@ -121,33 +148,68 @@ struct NotesEditor: View {
     }
 }
 
-/// The workspace's tags, each checked when it is on the task.
+/// The workspace's tags, each checked when it is on the task, and a field
+/// that creates one and puts it on.
 private struct TagPicker: View {
     @Binding var selection: Set<Int>
     let tags: [Tag]
+    /// Creates a tag by the name given and checks it.
+    let create: (String) async throws -> Void
+
+    @State private var name = ""
+    @State private var isCreating = false
+    @State private var error: (any Error)?
 
     var body: some View {
-        List(tags) { tag in
-            Button {
-                if selection.contains(tag.id) {
-                    selection.remove(tag.id)
-                } else {
-                    selection.insert(tag.id)
-                }
-            } label: {
-                HStack {
-                    Text(tag.name)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    if selection.contains(tag.id) {
-                        Image(systemName: "checkmark")
-                            .foregroundStyle(.tint)
+        List {
+            if !tags.isEmpty {
+                Section {
+                    ForEach(tags) { tag in
+                        Button {
+                            if selection.contains(tag.id) {
+                                selection.remove(tag.id)
+                            } else {
+                                selection.insert(tag.id)
+                            }
+                        } label: {
+                            HStack {
+                                Text(tag.name)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if selection.contains(tag.id) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                        .accessibilityAddTraits(selection.contains(tag.id) ? .isSelected : [])
                     }
                 }
             }
-            .accessibilityAddTraits(selection.contains(tag.id) ? .isSelected : [])
+            Section {
+                TextField("New Tag", text: $name)
+                    .onSubmit(createTag)
+                Button("Create", action: createTag)
+                    .disabled(isCreating || name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
         }
         .navigationTitle("Tags")
+        .errorAlert($error)
+    }
+
+    private func createTag() {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !isCreating else { return }
+        isCreating = true
+        Task {
+            do {
+                try await create(trimmed)
+                name = ""
+            } catch {
+                self.error = error
+            }
+            isCreating = false
+        }
     }
 }
 
@@ -265,7 +327,7 @@ struct NewTaskView: View {
 
     var body: some View {
         NavigationStack {
-            TaskForm(draft: $draft, folders: folders, tags: tags, focusesTitle: true)
+            TaskForm(draft: $draft, workspaceID: workspaceID, folders: folders, tags: tags, focusesTitle: true)
                 .navigationTitle("New Task")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -332,6 +394,7 @@ struct TaskDetailView: View {
         NavigationStack {
             TaskForm(
                 draft: $draft,
+                workspaceID: task.workspaceID,
                 folders: folders,
                 tags: tags,
                 showsStatus: true,
