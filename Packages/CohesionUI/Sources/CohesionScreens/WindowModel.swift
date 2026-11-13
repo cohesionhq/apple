@@ -230,6 +230,18 @@ public final class WindowModel {
         } failed: { self.error = $0 }
     }
 
+    /// Asks for what the tabs' first screens open on beyond the window's
+    /// lists, the Library's documents and the Tasks tab's Inbox, so they're
+    /// kept by the time a tab is first opened, which shows them at once while
+    /// it asks again. Quiet: the screen asks again and alerts itself.
+    public func warm() async {
+        guard let client = app.client, let workspaceID = selectedWorkspaceID else { return }
+        async let documents = client.listDocuments(in: workspaceID)
+        async let inbox = client.listFirstPage(of: .inSharedOrder(.inbox), statuses: [.incomplete], in: workspaceID)
+        _ = try? await documents
+        _ = try? await inbox
+    }
+
     /// Pull to refresh or Reload: the lists and the actors again, with one
     /// alert at most when they fail.
     public func refresh() async {

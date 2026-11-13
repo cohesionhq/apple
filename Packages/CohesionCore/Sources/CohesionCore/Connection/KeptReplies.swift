@@ -29,12 +29,20 @@ public nonisolated struct KeptReplies {
     }
 
     /// The name `type` with `args` is kept under: the command, then its
-    /// arguments by name.
+    /// arguments by name. A dictionary or array argument is written as JSON
+    /// with sorted keys, since a dictionary's own order changes each launch.
     public static func key(_ type: String, _ args: [String: Any?]?) -> String {
         let args = (args ?? [:]).compactMapValues { $0 }.sorted { $0.key < $1.key }
-        return ([type] + args.map { "\($0.key)=\($0.value)" })
+        return String(([type] + args.map { "\($0.key)=\(describe($0.value))" })
             .joined(separator: "-")
-            .filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == "=" }
+            .map { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == "=" ? $0 : "_" })
+    }
+
+    private static func describe(_ value: Any) -> String {
+        guard JSONSerialization.isValidJSONObject(value),
+              let json = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys)
+        else { return "\(value)" }
+        return String(decoding: json, as: UTF8.self)
     }
 
     public func reply(for key: String) -> Data? {

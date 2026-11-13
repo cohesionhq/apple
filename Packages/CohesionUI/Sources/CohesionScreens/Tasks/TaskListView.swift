@@ -64,12 +64,7 @@ struct TaskListView: View {
         self.tags = tags
         self.contacts = contacts
         self.openView = openView
-        let defaults = UserDefaults.standard
-        _query = State(initialValue: TaskQuery(
-            scope: scope,
-            sort: defaults.string(forKey: "taskSort").flatMap(TaskSort.init(rawValue:)) ?? .created,
-            descending: defaults.bool(forKey: "taskSortDescending")
-        ))
+        _query = State(initialValue: .inSharedOrder(scope))
     }
 
     /// The tasks `view` lists, in its order.
@@ -215,6 +210,14 @@ struct TaskListView: View {
             Text("Its tasks stay as they are.")
         }
         .forwardsItems()
+        .onAppear {
+            // The first page as last listed, from launching too, while it's asked again.
+            guard !isLoaded, let page = model.client?.keptFirstPage(of: query, statuses: statuses, in: workspaceID)
+            else { return }
+            tasks = page.tasks
+            total = page.total
+            isLoaded = true
+        }
         .task(id: Reload(query: query, showsCompleted: showsCompleted)) {
             await load(.asked, keepingPlace: false)
         }
@@ -336,10 +339,11 @@ struct TaskListView: View {
     private func load(_ origin: LoadOrigin = .automatic, keepingPlace: Bool = true) async {
         guard let client = model.client else { return }
         await origin.run {
-            let wanted = keepingPlace ? max(tasks.count, 50) : 50
+            let wanted = keepingPlace ? max(tasks.count, TaskQuery.firstPageSize) : TaskQuery.firstPageSize
             var loaded: [TaskItem] = []
             var total = 0
             repeat {
+                let limit = min(wanted - loaded.count, 500)
                 let page = try await client.listTasks(
                     in: workspaceID,
                     scope: scope,
@@ -350,7 +354,9 @@ struct TaskListView: View {
                     sort: query.sort,
                     descending: query.descending,
                     offset: loaded.count,
-                    limit: min(wanted - loaded.count, 500)
+                    limit: limit,
+                    // The first page, for the list to open on next time.
+                    keeping: loaded.isEmpty && limit == TaskQuery.firstPageSize
                 )
                 loaded += page.tasks
                 total = page.total
@@ -394,6 +400,41 @@ struct TaskListView: View {
         }
     }
 
+}
+
+extension TaskQuery {
+    /// How many tasks a list loads first.
+    static let firstPageSize = 50
+
+    /// `scope`'s tasks in the order the lists share, as a list opens on it.
+    static func inSharedOrder(_ scope: TaskScope) -> TaskQuery {
+        let defaults = UserDefaults.standard
+        return TaskQuery(
+            scope: scope,
+            sort: defaults.string(forKey: "taskSort").flatMap(TaskSort.init(rawValue:)) ?? .created,
+            descending: defaults.bool(forKey: "taskSortDescending")
+        )
+    }
+}
+
+extension CohesionClient {
+    /// The first page of `query`'s tasks, kept for the list to open on.
+    func listFirstPage(of query: TaskQuery, statuses: [TaskStatus], in workspaceID: Int) async throws -> TaskPage {
+        try await listTasks(
+            in: workspaceID, scope: query.scope, statuses: statuses, tags: query.tags,
+            priorities: query.priorities, sizes: query.sizes, sort: query.sort, descending: query.descending,
+            limit: TaskQuery.firstPageSize, keeping: true
+        )
+    }
+
+    /// The first page of `query`'s tasks as last kept.
+    func keptFirstPage(of query: TaskQuery, statuses: [TaskStatus], in workspaceID: Int) -> TaskPage? {
+        keptTasks(
+            in: workspaceID, scope: query.scope, statuses: statuses, tags: query.tags,
+            priorities: query.priorities, sizes: query.sizes, sort: query.sort, descending: query.descending,
+            limit: TaskQuery.firstPageSize
+        )
+    }
 }
 
 /// A priority's name beside its flag, for the priority pickers' items.

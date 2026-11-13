@@ -37,6 +37,10 @@ struct DashboardDueSection: View {
                 DashboardSectionHeader(title: "Due", count: tasks.count)
             }
         }
+        .onAppear {
+            // As last listed, from launching too, while they're asked again.
+            if tasks.isEmpty, let page = model.client.flatMap(keptDue) { tasks = page.tasks }
+        }
         .task(id: workspaceID) { await watch() }
         .errorAlert($error)
     }
@@ -102,18 +106,7 @@ struct DashboardDueSection: View {
         guard let client = model.client else { return }
         for await origin in client.loads(matching: { $0 == .taskList(workspaceID: workspaceID) }) {
             await origin.run {
-                let page = try await client.listTasks(
-                    in: workspaceID,
-                    scope: .all,
-                    statuses: [.incomplete],
-                    tags: TagFilter(),
-                    priorities: [],
-                    sizes: [],
-                    sort: .dueDate,
-                    descending: false,
-                    limit: 20,
-                    dueBefore: DashboardTaskFilter.today.dueBefore(.now)
-                )
+                let page = try await listDue(client)
                 withAnimation {
                     tasks = page.tasks
                     completed.formIntersection(page.tasks.map(\.id))
@@ -121,4 +114,24 @@ struct DashboardDueSection: View {
             } failed: { self.error = $0 }
         }
     }
+
+    /// The workspace's open tasks due today or earlier, soonest first, kept
+    /// for the next launch.
+    private func listDue(_ client: CohesionClient) async throws -> TaskPage {
+        try await client.listTasks(
+            in: workspaceID, scope: .all, statuses: [.incomplete], tags: TagFilter(), priorities: [], sizes: [],
+            sort: .dueDate, descending: false, limit: Self.limit, dueBefore: DashboardTaskFilter.today.dueBefore(.now),
+            keeping: true
+        )
+    }
+
+    /// What `listDue` last kept today.
+    private func keptDue(_ client: CohesionClient) -> TaskPage? {
+        client.keptTasks(
+            in: workspaceID, scope: .all, statuses: [.incomplete], tags: TagFilter(), priorities: [], sizes: [],
+            sort: .dueDate, descending: false, limit: Self.limit, dueBefore: DashboardTaskFilter.today.dueBefore(.now)
+        )
+    }
+
+    private static let limit = 20
 }
