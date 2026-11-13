@@ -265,8 +265,11 @@ public struct AgentChatView: View {
                 // Before it rises, so the zoom's source spans the avatar
                 // rather than clipping it until the sheet is gone.
                 .matchedTransitionSource(id: agent.id, in: header)
+                // Raised so the pill sits just under the navigation bar and
+                // the avatar, clearly larger than the name, rises past the back
+                // button's top, short of the Dynamic Island.
                 #if os(iOS)
-                .padding(.top, -53)
+                .padding(.top, -65)
                 #endif
         }
         // Soft, as Messages has it: the avatar and pill float over the feed,
@@ -1031,7 +1034,7 @@ private struct Source: Equatable {
 }
 
 /// The chat's header: the agent's avatar, to be raised into the navigation
-/// bar so it tops out level with the back button, its foot overlapping the
+/// bar so it stands clearly larger than the name, its foot overlapping the
 /// top of `HeaderPill` as Messages draws a contact. Tapping either opens the
 /// agent's info.
 private struct ChatHeader: View {
@@ -1043,7 +1046,7 @@ private struct ChatHeader: View {
         // disc sits over the glass but clear of the name.
         VStack(spacing: -6) {
             Button(action: showInfo) {
-                AgentAvatar(agent: agent, diameter: 48)
+                AgentAvatar(agent: agent, diameter: 60)
             }
             .buttonStyle(.plain)
             // `HeaderPill` speaks for the header.
