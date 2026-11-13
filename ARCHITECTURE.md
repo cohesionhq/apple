@@ -50,7 +50,7 @@ flowchart TD
 | Package › library | Folder under `Packages/` | What it is |
 | --- | --- | --- |
 | `CohesionCore` | `CohesionCore/Sources/CohesionCore/` | No UI: `Connection/`, `Models/`, `AppLink.swift`, `Intents/` (the App Intents of the controls, Shortcuts and the Tasks widget's rows that open the app, iOS only) and `PlatformImage` (`UIImage` or `NSImage`), which is all it knows of a platform. |
-| `CohesionUI` › `CohesionUI` | `CohesionUI/Sources/CohesionUI/` | Views anything can use: `AgentAvatar`, `ServiceIcon` and `SVGIcon`, `SymbolIcon` (a row's gradient and symbol), `StatusDots` (a grid of status dots, the Live Activity's and the iPhone tab bar's), `Toast`, `errorAlert`, `ProtocolPresentation.swift` (the symbol and color of each value from the daemon) and `Platform.swift`. |
+| `CohesionUI` › `CohesionUI` | `CohesionUI/Sources/CohesionUI/` | Views anything can use: `AgentAvatar`, `ServiceIcon` and `SVGIcon`, `SymbolIcon` (a row's gradient and symbol), `StatusDots` (a grid of status dots, the Live Activity's and the iPhone tab bar's), `workingShimmer` (the sweep across a working agent's or session's text), `Toast`, `errorAlert`, `ProtocolPresentation.swift` (the symbol and color of each value from the daemon) and `Platform.swift`. |
 | `CohesionUI` › `CohesionMarkdown` | `CohesionUI/Sources/CohesionMarkdown/` | The Markdown parser, `MarkdownText`, `MarkdownEditor` (`UITextView` or `NSTextView`, one styler) and diagrams in a web view, which is why it's apart: the extensions don't link WebKit. |
 | `CohesionUI` › `CohesionScreens` | `CohesionUI/Sources/CohesionScreens/` | `AppModel`, `WindowModel`, every screen, and what a shell builds from: `WindowContent.swift`, `WorkspaceSections.swift`. |
 
@@ -141,7 +141,8 @@ Paths from here on are relative to `Cohesion/` for the iOS shell,
   first screen's bar (`tabRootToolbar`), and the iPad's two columns (the sidebar and what's open).
   `Cohesion/Views/ActorsBar.swift` is the tab bar's accessory: the actor
   sessions as `StatusDots` (`CohesionUI`, the Live Activity's dots too) and
-  their counts, opening them in a sheet, and New Task.
+  their counts, which shimmer while one is working, opening them in a sheet,
+  and New Task.
   `Cohesion/Views/Sidebar.swift` is the iPad's sidebar around the
   shared `SidebarSections` (`WorkspaceSections.swift`), in the tabs' order:
   Today and Tasks (`WorkspaceSections`), the agents and actors, the Library's

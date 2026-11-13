@@ -317,7 +317,8 @@ An actor session works the same way. Its row's title, in the sidebar and in the
 `ActorsBar`'s sheet, shimmers, with no leading icon; its status sits in the subtitle. The foot of its transcript is the same caption, its dot the accent
 since a session has no color of its own; the header's title stays still. A
 session has a status rather than an activity, so its caption always says
-"Working…".
+"Working…". The `ActorsBar`'s line of counts shimmers while any session is
+working, in step with the rows.
 
 ## Copy
 

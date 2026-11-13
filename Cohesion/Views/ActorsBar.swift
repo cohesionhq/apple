@@ -9,7 +9,8 @@ import SwiftUI
 /// opens the sessions; then New Task, so a task can be captured from anywhere.
 /// It counts every session not resolved (`current`), done and failed
 /// included, as the Live Activity and the Actors list do. The line leaves
-/// done out unless that's all there is ("All done").
+/// done out unless that's all there is ("All done"). The line shimmers while
+/// any session is working, as a working session's row does.
 /// Beside the tab bar collapsed on scrolling, it has half the width, and the
 /// line names only the most pressing count.
 struct ActorsBar: View {
@@ -34,6 +35,7 @@ struct ActorsBar: View {
                     Text(isInline ? shortSummary : summary)
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
+                        .workingShimmer(count(.working) > 0, dimmed: 0.35)
                     Spacer(minLength: 0)
                 }
                 .contentShape(.rect)
